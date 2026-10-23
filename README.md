@@ -1,8 +1,10 @@
 # kitten4 .bcm4 基础工作模板
 
+（全部由ai搭建）
+
 一套kitten4（编程猫）`.bcm4` 作品开发基础设施：
 从「起一个新项目」到「生成 + 校验 + 闭环测试」的全套工具、数据与文档。
-换任何机器：`git clone` 本仓库 → `python tools/scaffold.py 我的作品` → 开工。
+`git clone` 本仓库 → `python tools/scaffold.py 我的作品` → 开工。
 
 > **AI agent 读者**（Codex / Cursor / Continue 等）：先读 `AGENTS.md`——那是给你的入口。
 
