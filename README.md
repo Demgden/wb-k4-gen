@@ -1,6 +1,6 @@
 # kitten4 .bcm4 基础工作模板
 
-一套**自包含、可发布 git 仓库**的 kitten4（编程猫）`.bcm4` 作品开发基础设施：
+一套kitten4（编程猫）`.bcm4` 作品开发基础设施：
 从「起一个新项目」到「生成 + 校验 + 闭环测试」的全套工具、数据与文档。
 换任何机器：`git clone` 本仓库 → `python tools/scaffold.py 我的作品` → 开工。
 
@@ -108,20 +108,3 @@ DSL 全部助手见 `tools/bcm4gen.js` 头部注释。
 
 Node.js + Python 3，任意 POSIX shell（Windows 用 Git Bash）。
 无需 npm 依赖、无需联网、无任何机器相关绝对路径——clone 即可用。
-
-## 发布为 git 仓库
-
-本仓库**已完成** `git init`（main 分支，首次提交见 `git log`）。推到远程：
-
-```bash
-git remote add origin <你的仓库地址>
-git push -u origin main
-```
-
-发布前检查单：
-1. `git status` 确认 `out/`（生成产物）未被提交——已在 `.gitignore`
-2. `projects/` 下没有不想公开的私有作品（有就移出或加 `.gitignore`）
-3. 建议补一个 `LICENSE`（如 MIT）
-4. 换设备验证：`git clone <地址> /tmp/t && cd /tmp/t && bash examples/poorphy/check_all.sh`
-
-`.gitattributes` 已规定：文本统一 LF，`.bcm4`/图片按二进制（防止换行改动字节）。
