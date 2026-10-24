@@ -96,7 +96,7 @@ const defs = dataPath("block_defs.json");
 ```
 
 解析顺序：`TOOLS4K4_HOME` 环境变量 → 从项目逐级向上找 `tools4k4/` → 常见兄弟目录 →
-都失败时抛出**带排查建议**的错误（而不是一句天书）。
+都失败时抛出**带排查建议**的错误。
 
 项目完全独立时：`export TOOLS4K4_HOME=/path/to/tools4k4`。
 
@@ -119,7 +119,7 @@ tools4k4/
 ├── projects/       你的项目（scaffold 生成）
 ├── out/            产物（gitignore）
 ├── docs/           block_reference.md(铁律全文·按需查) workflow.md(完整工作流)
-└── reference_works/  真实作品（florr合卡 / florr-重置版 / 预瞄）
+└── reference_works/  真实作品（florr合卡 / 球体物理 / 预瞄）
 ```
 
 ## 7. 交付前
