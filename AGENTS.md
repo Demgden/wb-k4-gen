@@ -77,6 +77,7 @@ python tools/query_block.py --use  check_key      # 真实用例：key 字段合
 | 症状 | 根因 | 防线 |
 |---|---|---|
 | 编辑器能打开但脚本区空白 | 块缺 connections 条目 | `check_connections.js` |
+| 能打开、积木零散不连接、不报错（≥1000 块静默吞异常） | 未注册积木类型（Scratch 名 vs kitten4 名，如 `math_mod`→`math_modulo`）| `validate_bcm4.py` 7c 节 + `data/editor_block_types.json` 注册表；新增/改名积木先跑 `tools/extract_registry.py` 确认真名 |
 | 一改积木就坏 | 命名输入缺 shadows | 重跑 `check_all.sh` + 人工过铁律 2 |
 | 阈值分支永远走低层 | `controls_if` 低阈值排在前面 | 铁律 3，VM 测试覆盖分支 |
 | 按键/鼠标交互无反应 | 布尔与数字比较（`true≠1`） | 铁律 4 |
