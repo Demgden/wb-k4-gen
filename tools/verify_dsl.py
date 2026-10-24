@@ -6,12 +6,15 @@ ask.py / rules.json / dsl_api.json 是给 agent 查的知识库。知识库一�
 agent 就会照着过期信息写出坏代码 —— 而且比没查还糟（它以为自己查过了）。
 所以知识库必须像生成产物一样被门禁守住。
 
-本工具检查 4 件事：
+本工具检查 6 件事：
   1. dsl_api.json 与 tools/bcm4gen.js 同步（源码改了、索引没改 → 报错）
   2. dsl_api.json 里每个 editor_type 都在编辑器注册表内（抓 Scratch 名混用，如 math_mod）
   3. rules.json 每条「[库已自动]」声明的 proof 正则都能在 bcm4gen.js 匹配到
      （防止知识库宣称「库已帮你处理」而实际没处理 —— agent 会因此跳过防御）
   4. rules.json 里引用的 API 名在 dsl_api.json 中都真实存在
+  5. rules.json 与 docs/block_reference.md 的铁律编号一致
+  6. 散文（.md / .py 输出）里声明的「N 条铁律」等计数与 rules.json 实际条数一致
+     （纯文本里的数字不可验证，必须由门禁守住 —— 否则会漂）
 
 用法：
   python tools/verify_dsl.py            # 全查
@@ -129,6 +132,92 @@ def main():
             notes.append("rules.json 与 block_reference.md 铁律编号一致（%d 条）" % len(law_ids))
     else:
         notes.append("（未找到 docs/block_reference.md，跳过铁律编号一致性检查）")
+
+    # ---- 6. 散文里声明的「N 条铁律」必须与 rules.json 实际条数一致 ----
+    # 为什么要查：第 5 项只比对「编号集合」（{1..16} 一致就通过），
+    # 而散文里还有另一类事实 ——「有 N 条铁律」「共 M 条要自己操心」。
+    # 这些是纯文本里的数字，没有任何机制保证它们跟着数据走：
+    # 实测 rules.json 是 16 条，block_reference.md 标题却写「十五条」，
+    # ask.py 输出里写「15 条铁律」「15+1 条铁律」—— 门禁一路绿灯，agent 读到错数字。
+    # 结论：Markdown 适合放结构，不适合放事实。事实只在 rules.json，
+    # 散文里出现的计数由本项守住。
+    n_total = len(rules["laws"])
+    n_auto = sum(1 for l in rules["laws"] if l.get("enforced_by") == "bcm4gen")
+    n_manual = sum(1 for l in rules["laws"] if l.get("enforced_by") == "manual")
+
+    # 散文里可能用中文数字（「十六条」），也可能用阿拉伯数字（「16 条」）
+    cn_digits = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5,
+                 "六": 6, "七": 7, "八": 8, "九": 9}
+
+    def cn2int(s):
+        """数字表达式 → int。支持 1~99 中文数字，也支持「15+1」这种加法写法。
+        （曾写过「15+1 条铁律」= 16 条，若只取末段会误报成 1 → 必须整体求和）
+        解析不了返回 None。"""
+        if not s:
+            return None
+        if "+" in s:
+            total = 0
+            for part in s.split("+"):
+                v = cn2int(part.strip())
+                if v is None:
+                    return None
+                total += v
+            return total
+        if s.isdigit():
+            return int(s)
+        if "十" not in s:
+            if len(s) == 1 and s in cn_digits:
+                return cn_digits[s]
+            return None
+        head, _, tail = s.partition("十")
+        tens = cn_digits.get(head, 1) if head else 1
+        ones = cn_digits.get(tail, 0) if tail else 0
+        return tens * 10 + ones
+
+    # 数字表达式：阿拉伯数字可带「+N」；或纯中文数字
+    num_re = r"((?:[0-9]+)(?:\s*\+\s*[0-9]+)*|[零一二两三四五六七八九十]+)"
+    # 只认「N 条铁律」和「N 条编辑器语义铁律」这种明确指向铁律条数的说法
+    claim_pats = [
+        (re.compile(num_re + r"\s*条(?:编辑器语义)?铁律"), n_total, "铁律总条数"),
+        (re.compile(r"\[需自己写对\][^\n]*?共\s*" + num_re + r"\s*条"), n_manual, "需自己写对的条数"),
+    ]
+    # 扫哪些文件：所有会被 agent 当事实读的散文
+    scan_files = ["AGENTS.md", "README.md", "docs/block_reference.md", "docs/workflow.md"]
+    for rel in scan_files:
+        p = os.path.join(ROOT, rel)
+        if not os.path.exists(p):
+            continue
+        text = open(p, encoding="utf-8").read()
+        for pat, expect, label in claim_pats:
+            for m in pat.finditer(text):
+                got = cn2int(m.group(1))
+                if got is None:
+                    continue
+                if got != expect:
+                    line = text[:m.start()].count("\n") + 1
+                    errs.append("%s:%d 声称%s = %d，但 rules.json 实际是 %d（散文数字会漂，必须与真源一致）"
+                                % (rel, line, label, got, expect))
+
+    # ask.py 里的输出文本也扫：它直接喂给 agent，数字错了危害最大
+    ask_p = os.path.join(HERE, "ask.py")
+    if os.path.exists(ask_p):
+        text = open(ask_p, encoding="utf-8").read()
+        # 排除注释与 docstring 里的历史叙述（那些不是「声明」）
+        code = "\n".join(l for l in text.splitlines() if not l.strip().startswith("#"))
+        code = re.sub(r'""".*?"""', "", code, flags=re.S)
+        for pat, expect, label in claim_pats:
+            for m in pat.finditer(code):
+                got = cn2int(m.group(1))
+                if got is None:
+                    continue
+                if got != expect:
+                    line = text[:m.start()].count("\n") + 1
+                    errs.append("tools/ask.py:%d 声称%s = %d，但 rules.json 实际是 %d（输出文本会直接给 agent 读）"
+                                % (line, label, got, expect))
+
+    if not errs:
+        notes.append("散文里声明的计数与 rules.json 一致（铁律 %d 条：库自动 %d / 需自己写对 %d）"
+                     % (n_total, n_auto, n_manual))
 
     if not quiet:
         for n in notes:

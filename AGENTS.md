@@ -1,7 +1,8 @@
 # AGENTS.md — AI agent 工作入口
 
-> 本文件给 AI coding agent用。
+> 本文件给 AI coding agent（Codex / Cursor / Continue / WorkBuddy 等）用。
 > **不要通读 docs/ 下的文档**——有查询工具，30 秒拿到你要的那一条。
+> 人类读者请从 `README.md` 开始。
 
 ## 0. 先跑这一条
 
@@ -10,15 +11,16 @@ python tools/ask.py orient
 ```
 
 它会告诉你：这是什么仓库、现在该干什么、5 条最常用命令、3 条最容易犯的错。
+**跑完直接开工，不要再翻文档。**
 
 ## 1. 这是什么
 
 kitten4（编程猫）`.bcm4` 作品开发基础设施：**积木 DSL 生成器 + 已验证信封 + 四道校验 + VM 闭环测试**。
 工作方式：写 `content.js`（JS DSL 描述积木）→ 生成 `.bcm4` → 校验 → 拖进 kitten4 编辑器。
 
-两条规矩：**不要手写 `.bcm4` JSON**；**不要改 `envelopes/` 里信封的结构**。
+两条硬规矩：**不要手写 `.bcm4` JSON**；**不要改 `envelopes/` 里信封的结构**。
 
-## 2. 任务 → 命令
+## 2. 任务 → 命令（照着跑，不要自己找）
 
 | 你要做的事 | 跑这条 |
 |---|---|
@@ -26,7 +28,7 @@ kitten4（编程猫）`.bcm4` 作品开发基础设施：**积木 DSL 生成器 
 | 改已有项目 | 改 `projects/<名字>/content.js` → `bash projects/<名字>/check.sh` |
 | **写某块积木前**（必做） | `python tools/ask.py dsl <函数名>` —— 别猜参数名 |
 | 查某积木的结构/真实用例 | `python tools/ask.py blocks --type <类型>` / `--use <类型>` |
-| 编辑器里表现不对 | `python tools/ask.py symptom <症状>` |
+| 编辑器里表现不对 | `python tools/ask.py symptom <症状>` —— 按症状反查根因 |
 | 读懂别人的 .bcm4 | `python tools/ask.py task read` |
 | 写 VM 闭环测试 | `python tools/ask.py task vm` |
 | 交付前自检 | `python tools/ask.py guard` |
@@ -43,6 +45,9 @@ kitten4（编程猫）`.bcm4` 作品开发基础设施：**积木 DSL 生成器 
 
 > 这个标注不是口头承诺：`tools/verify_dsl.py` 会逐条核对声明与源码是否一致，对不上就报错。
 > 所以「[库已自动]」是**被验证过**的，可以放心跳过。
+>
+> 上面这些条数也不是手写的：它们由 `data/rules.json` 派生，门禁会核对本文件里
+> 写的条数与真源一致 —— 散文里的数字一旦漂了，`verify_dsl.py` 立刻报错。
 
 最常踩的 3 条（其余用 `ask.py law` 查）：
 
@@ -91,7 +96,7 @@ const defs = dataPath("block_defs.json");
 ```
 
 解析顺序：`TOOLS4K4_HOME` 环境变量 → 从项目逐级向上找 `tools4k4/` → 常见兄弟目录 →
-都失败时抛出**带排查建议**的错误。
+都失败时抛出**带排查建议**的错误（而不是一句天书）。
 
 项目完全独立时：`export TOOLS4K4_HOME=/path/to/tools4k4`。
 
@@ -114,7 +119,7 @@ tools4k4/
 ├── projects/       你的项目（scaffold 生成）
 ├── out/            产物（gitignore）
 ├── docs/           block_reference.md(铁律全文·按需查) workflow.md(完整工作流)
-└── reference_works/  真实作品
+└── reference_works/  真实作品（florr合卡 / florr-重置版 / 预瞄）
 ```
 
 ## 7. 交付前

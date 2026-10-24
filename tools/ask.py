@@ -7,7 +7,7 @@ docs/block_reference.md（22KB，标注「动手前必读」）+ 反推 566 行 
 才能开始写第一块积木 —— 光是「理解仓库」就要十几分钟、几千 token。
 
 本工具把这些知识做成可查询的：
-  orient     30 秒上手：这个仓库是什么、现在该干什么、5 条最常用命令
+  orient     30 秒上手：这个仓库是什么、现在该干什么、最常用命令
   task       任务食谱（起项目/改项目/查积木/读懂作品/调试）
   dsl        查生成 DSL 函数（K.xxx）：签名 + 对应积木类型 + 注释警告
   law        查铁律（含「库已自动处理」标记，可跳过）
@@ -64,6 +64,23 @@ def die(msg, code=1):
     sys.exit(code)
 
 
+def law_counts():
+    """铁律条数从 rules.json 实时取 —— 绝不写死数字。
+
+    写死过，然后漂了：rules.json 是 16 条，ask.py 里却写「15 条铁律」「15+1 条铁律」，
+    block_reference.md 标题写「十五条」而正文编号到 16。
+    门禁 verify_dsl.py 之前只比对「编号集合」（{1..16} 一致 → 通过），
+    从不解析散文里的「几条」→ 计数维度是瞎的，这类漂移能一路绿灯溜过去。
+    """
+    rules = load("rules.json") or {}
+    laws = rules.get("laws", [])
+    return {
+        "total": len(laws),
+        "auto": sum(1 for l in laws if l.get("enforced_by") == "bcm4gen"),
+        "manual": sum(1 for l in laws if l.get("enforced_by") == "manual"),
+    }
+
+
 # ----------------------------------------------------------------- orient
 def cmd_orient(args):
     print("""== kitten4 .bcm4 开发：30 秒上手 ==
@@ -84,26 +101,35 @@ def cmd_orient(args):
     for a, b in tasks:
         print("  %s%s" % (pad(a, 18), b))
 
+    cmds = [
+        ("python tools/scaffold.py <项目名>", "起新项目（唯一正确起点）"),
+        ("bash projects/<项目名>/check.sh", "生成 + 校验 + 连接检查"),
+        ("python tools/ask.py dsl <名字>", "查生成 DSL（写积木前必查）"),
+        ("python tools/ask.py blocks --type <类型>", "查积木结构/输入/影子默认值"),
+        ("bash tools/check_all.sh <作品.bcm4>", "发布门禁（信封+连接+可选 VM）"),
+    ]
+    print("\n【%d 条最常用命令】" % len(cmds))
+    for a, b in cmds:
+        print("  %s%s" % (pad(a, 46), b))
+
+    c = law_counts()
+    mistakes = [
+        ("controls_if 是 if/else-if", "阈值分支必须高阈值优先排（ask.py dsl ifChain）"),
+        ("布尔积木输出 Boolean，true≠1", "条件直用布尔变量，取反用 K.not（ask.py dsl not）"),
+        ("math_round = floor(x+0.5)", "Python 侧禁内置 round()（ask.py law 14）"),
+    ]
+    print("【%d 条最容易犯的错（其余 %d 条用 ask.py law 查）】" % (len(mistakes), c["total"] - len(mistakes)))
+    for i, (a, b) in enumerate(mistakes, 1):
+        print("  %d. %s —— %s" % (i, a, b))
+
     print("""
-【5 条最常用命令】
-  python tools/scaffold.py <项目名>          起新项目（唯一正确起点）
-  bash projects/<项目名>/check.sh             生成 + 校验 + 连接检查
-  python tools/ask.py dsl <名字>              查生成 DSL（写积木前必查）
-  python tools/ask.py blocks --type <类型>   查积木结构/输入/影子默认值
-  bash tools/check_all.sh <作品.bcm4>         发布门禁（信封+连接+可选 VM）
-
-【三条最容易犯的错（其余 13 条用 ask.py law 查）】
-  1. controls_if 是 if/else-if —— 阈值分支必须高阈值优先排（ask.py dsl ifChain）
-  2. 布尔积木输出 Boolean，true≠1 —— 条件直用布尔变量，取反用 K.not（ask.py dsl not）
-  3. math_round = floor(x+0.5) —— Python 侧禁内置 round()（ask.py law 14）
-
 【铁律怎么用】
-  15 条铁律里大部分已由 tools/bcm4gen.js 自动处理（你只要用对 DSL 助手）。
-  用 ask.py law <编号> 看哪条要你自己操心 —— 标 [库已自动] 的可跳过。
+  %d 条铁律里 %d 条已由 tools/bcm4gen.js 自动处理，%d 条要你自己写对，%d 条有校验器兜着。
+  用 ask.py law <编号> 看哪条要你操心 —— 标 [库已自动] 的可跳过。
 
 【更多】
   ask.py task        任务食谱    ask.py symptom  症状反查    ask.py guard  交付自检
-""")
+""" % (c["total"], c["auto"], c["manual"], c["total"] - c["auto"] - c["manual"]))
     return 0
 
 
@@ -128,7 +154,7 @@ TASKS = {
     "read": """== 任务：读懂已有 .bcm4 ==
   python tools/bcm4_read.py <作品.bcm4> [角色名过滤...] [--maxlines N] [--no-vars]
   → 输出变量/列表清单 + 每个角色/场景的脚本树（中文积木名+参数，if/else-if 正确缩进）
-  大作品先看 reference_works/INDEX.md 的索引。
+  大作品先看 reference_works/ 目录里的文件（florr合卡 / florr-重置版 / 预瞄）。
   查某块积木在真实作品里怎么用：python tools/ask.py blocks --use <类型>""",
     "debug": """== 任务：调试（编辑器里表现不对） ==
   1) 按症状反查：python tools/ask.py symptom <症状关键词>
@@ -227,7 +253,8 @@ def cmd_law(args):
         die("data/rules.json 不存在")
     laws = rules["laws"]
     if not args:
-        print("== 15+1 条铁律（标注 [库已自动] 的不必操心）==\n")
+        c = law_counts()
+        print("== %d 条铁律（标注 [库已自动] 的不必操心）==\n" % c["total"])
         for l in laws:
             tag = {"bcm4gen": "[库已自动]", "manual": "[需自己写对]", "validator": "[有校验器]"}[l["enforced_by"]]
             print("%2d. %s %s" % (l["id"], pad(l["title"], 40), tag))
