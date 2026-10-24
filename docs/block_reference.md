@@ -16,7 +16,7 @@
 
 ---
 
-## 一、十五条编辑器语义铁律
+## 一、十六条编辑器语义铁律
 1. **移除顶层 `compile_result`**：否则编辑器只读它、忽略 `block_data_json` → 脚本区空白。`bcm4gen` 已自动剔除。
 2. **`emitChain` 必须返回链首块**（供 DO/next 语句输入连接）；返链尾→双父块→Blockly 加载拽走、DO 空出、表现为「嵌套积木向右下偏移」。`bcm4gen` 已正确返回链首。
 3. **`change_variable` 字段是 `valname`(变量UUID)+`method`("increase"/"decrease")，值输入名 `n`**；不是 `variables_set` 的 `VAR`。用 `K.chgV(name, val)`。
