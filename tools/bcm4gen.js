@@ -151,8 +151,9 @@ const round = a => ({ type: "math_round", fields: { OP: "ROUND" }, inputs: { NUM
 // 注意：参数传变量名；V() 每次新建节点，同一节点对象用于 A、B 两输入会丢一条边（mul 缺 A）。
 const stepLen = (nx, ny) => sqrt(add(mul(V(nx), V(nx)), mul(V(ny), V(ny))));
 const rnd = (a, b) => ({ type: "random", inputs: { a: a, b: b }, out: true });
-// 取模
-const mod = (a, b) => ({ type: "math_mod", inputs: { DIVIDEND: a, DIVISOR: b }, out: true });
+// 取模。注意：kitten4 的类型名是 math_modulo，不是 Scratch 的 math_mod——
+// 未注册类型会让编辑器建块抛异常（≥1000 块走异步加载、异常被吞）→ 工作区空白/积木不连接
+const mod = (a, b) => ({ type: "math_modulo", inputs: { DIVIDEND: a, DIVISOR: b }, out: true });
 
 const B = (type, fields = {}, inputs = {}, body = null, mutation = "") => ({ type, fields, inputs, body, mutation });
 const move = n => B("self_go_forward", {}, { steps: lit(n) });
@@ -194,6 +195,18 @@ const imageStamp = () => B("image_stamp");
 // warp / 一步执行：内部嵌套循环同帧跑完，再等 1 帧。用于克隆体初始化原子化。
 // 注意：warp 只能包「有界」循环；内部 repeat_forever 会在「一帧」内无法展开 → VM/编辑器会卡死。
 const warp = body => B("warp", {}, {}, { DO: chain(...body) });
+
+// 计时器（实证自 kitten.js）：
+//   get_timer 读取「虚拟秒」，但必须先用 set_timer_state(start) 启动计时，否则恒为 0。
+//   show_hide_timer 控制编辑器默认那个丑陋的计时器 UI（默认空作品会自动注入 hide+start，
+//   手写作品不会 → 不调用就一直显示默认计时器）。
+//   reset_timer / set_timer_state(reset) 归零并 set_time("0.00")。
+const getTimer = () => ({ type: "get_timer", out: true });
+const startTimer = () => B("set_timer_state", { actions: "start" });
+const stopTimer = () => B("set_timer_state", { actions: "stop" });
+const resetTimer = () => B("set_timer_state", { actions: "reset" });
+const hideTimer = () => B("show_hide_timer", { state: "hide" });
+const showTimer = () => B("show_hide_timer", { state: "show" });
 
 // controls_if：铁律 7 —— 它是 if/else-if（首个命中即返回），不是独立多 if。
 // branches 形如 [{cond, body}, {cond, body}, {cond:null, body}]，高阈值分支务必排在前面。
@@ -545,8 +558,9 @@ module.exports = {
   cloneIdx, cloneNum, appear, hide, costume, fade, scaleUp, shake,
   penDown, penUp, penColor, penSize, clearDraw, play, stopAud,
   listAdd, listSet, listGet, listLen, wait, forever, repeatN, setScene, imageStamp, warp,
+  getTimer, startTimer, stopTimer, resetTimer, hideTimer, showTimer,
   ifChain, chain, onStart, onClone, defParam, paramRef,
   defStyle, defActor, defScene, script, cloneScript, sceneScript, emitScript,
   build, write, reset, gatherVariables,
-  get state() { return { vars, lists, styles, actors, groups, audio, SCENE_ID, SCENE_BDJ, actorOrder }; },
+  get state() { return { vars, lists, styles, actors, groups, audio, audio_order, SCENE_ID, SCENE_BDJ, actorOrder }; },
 };

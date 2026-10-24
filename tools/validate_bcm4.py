@@ -160,6 +160,31 @@ for ai, a in enumerate(actors):
     if orphan:
         warns.append(f"{name}: {len(orphan)} unreachable blocks ({', '.join(sorted(set(blocks[o]['type'] for o in orphan)))})")
 
+# 7c. 积木类型必须在编辑器注册表内（data/editor_block_types.json）
+#     根因案例：bikeman.bcm4 手写 K.B("math_mod",...)——Scratch 风格类型名，
+#     kitten4 只认 math_modulo。未注册类型 → 编辑器建块抛异常；≥1000 块走异步
+#     加载、异常被 console.log 吞掉 → 工作区空白、积木不连接、作品不能运行。
+#     注册表来源：tools/extract_registry.py 从 kitten.js 抽取（5 个注册模式并集）。
+#     文件缺失时降级为 WARN（校验器仍可独立使用）。
+import os
+REG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "data", "editor_block_types.json")
+if os.path.exists(REG_PATH):
+    REG_TYPES = set(json.load(open(REG_PATH, encoding="utf-8")))
+    unreg = {}
+    for a in actors:
+        bd = a.get("block_data_json") or {}
+        for b in (bd.get("blocks") or {}).values():
+            t = b.get("type")
+            if t not in REG_TYPES:
+                unreg.setdefault(t, []).append(a.get("name"))
+    for t, whos in sorted(unreg.items()):
+        errs.append("block type %r not registered in editor (used by %s) "
+                    "— 建块会抛异常，作品打不开/脚本区空白" % (t, ",".join(sorted(set(whos)))))
+    print("registry check: %d known types, %d unregistered" % (len(REG_TYPES), len(unreg)))
+else:
+    warns.append("editor_block_types.json 缺失（python tools/extract_registry.py 生成），跳过类型注册校验")
+
 # 8. editor-envelope parity (real 4.11.20-saved works) — 缺这些字段/多写这些键 → 编辑器打不开
 #    来源：PoorPhy.bcm4 首次生成被编辑器拒绝，逐字段 diff 真实作品定位。
 #    2026-10-23 二次修正（对齐 references/block_reference.md 第七节）：

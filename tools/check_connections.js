@@ -50,6 +50,16 @@ function ifInputs(mutation) {
   return inputs;
 }
 
+// text_join 的槽位数由 mutation items 决定（默认 XML 只有 ADD0/ADD1，
+// 真实作品 items=3/4 常见；旧版不读 mutation → 对 ADD2+ 误报）
+function textJoinInputs(mutation) {
+  const inputs = ["TITLE_HEAD", "TITLE_TAIL", "MUTATE_BUTTON"];
+  const im = (mutation || "").match(/items="(\d+)"/);
+  const n = im ? parseInt(im[1]) : 2;
+  for (let i = 0; i < n; i++) inputs.push("ADD" + i);
+  return inputs;
+}
+
 let problems = 0;
 const th = work.theatre;
 for (const a of Object.values(th.actors)) {
@@ -62,6 +72,7 @@ for (const a of Object.values(th.actors)) {
     if (!parent) { console.log(`[${name}] conn source ${pid} missing`); problems++; continue; }
     let avail;
     if (parent.type === "controls_if") avail = ifInputs(parent.mutation || "");
+    else if (parent.type === "text_join") avail = textJoinInputs(parent.mutation || "");
     else avail = xmlInputs(parent.type); // null if unknown
     for (const [cid, meta] of Object.entries(m || {})) {
       const child = blocks[cid];
