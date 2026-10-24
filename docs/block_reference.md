@@ -1,7 +1,15 @@
 # kitten4 积木参考 / Block Reference
+
+> **按需查，不要通读。** agent 用 `python tools/ask.py law`（按编号/关键词查铁律）、
+> `ask.py symptom <症状>`（按现象反查）、`ask.py dsl <函数名>`（查 DSL 签名）——
+> 命中的那一条才是你要读的。本文件是这些查询的**全文底稿**。
+> 另有结构化版本在 `data/rules.json`（机器可读，标注每条归谁负责）。
+
 供 AI「生成」与「看懂」`.bcm4` 时使用。配套文件：
-- `data/block_struct.json` — 329 种积木的完整结构（输入名/字段名），生成器做连接校验的依据。
 - `data/block_defs.json` — 144 种积木的默认 shadow 模板（编辑器自带 define_block_xml 源），`bcm4gen.js` 用它补全每个值输入的 shadow。
+- `data/block_struct.json` — 329 种积木的完整结构（输入名/字段名），生成器做连接校验的依据。
+- `data/editor_block_types.json` — 876 种积木类型注册表（哪些 type 名编辑器真的认）。
+- `data/dsl_api.json` — 生成 DSL 的 API 索引（签名 + 对应积木类型）。
 - `tools/bcm4gen.js` — 生成库（见下「生成 DSL」）。
 - `tools/bcm4_read.py` — 反编译器（`.bcm4` → 中文伪代码）。
 - `tools/validate_bcm4.py` / `tools/check_connections.js` — 写完必跑的两道校验。
@@ -32,6 +40,7 @@
     - **调试方法**：用「精确 `==` 逐帧扫描」定位首处分歧帧 → 对该帧追踪 VM 侧 `variables_set`/`lists_replace` 写入序列与参考模型侧同名函数 → 逐项 `repr()` 对比中间量，找第一个不同的数。
 14. **`math_round`（四舍五入）语义与取整边界**（2026-10-23 PoorPhy 实测）：块结构 `type:"math_round"` + `fields:{OP:"ROUND"}`（另两个选项 ROUNDUP=Math.ceil / ROUNDDOWN=Math.floor），NUM 是 `input_shadow`（block_defs.json 模板默认值 3.1，被真实 reporter 占据时自动生成 phantom 影子，无需手工补 shadows）。 kitten4 编译为 **JS `Math.round`**（floor(x+0.5)），Python 镜像必须写 `float(math.floor(v + 0.5))`——写内置 `round()`（银行家舍入）会在 .5 边界与 VM 假分叉。**取整策略（用户 2026-10-23 最终裁定）**：编辑器坐标显示自动保留 1 位，渲染层无需取整；**允许对「大量级标量」取整**（世界顶点 ±600、位置积分输出 ±600、抓取目标 → 相对误差 ≤0.08%，大幅削减 18 位小数运算量）；**速度/角度/角速度/单位向量/中间量不取整**（量级小，round 5.4→5 即 7% 误差，整度跳变可见棱角）。派生量（顶点）每帧重算，取整不累积；积分位置取整的已知副作用：|v|<0.5 提前静止、穿透修正 <0.5px 被容忍。也不要用 `[round of [n*10]]/10` 这类假保留小数 hack。
 15. **动态刚体（运行时可增删）三件套**（2026-10-23 PoorPhy「新增刚体」功能实测）：① **所有状态列表按容量上限 `NB_MAX` 预扩展**——含容易被漏掉的 `边数`/`刚R`（它们常随初始数据 listAdd 生成，不占预扩展循环）→ G 键写第 7 槽时 `lists_replace` 越界**静默空操作**（铁律 11）→ 新刚体边数/半径恒 0 → `世界顶点(7)` 读 `边数[7]` 直接 ListIndexError 崩。VM 测试靠「读越界抛错」抓到了它。② **「当前个数」用变量（如 `体数`），不用常量**——重力/宽相位/积分/渲染/找最近全部 `rep(V("体数"), ...)`；宽相位内层 `rep(K.sub(V("体数"), V("iSTEP")), ...)`。③ **参数化按键（无文本输入积木时的范式）**：一个键循环切参数（边数 3→…→8→3，`ifChain` 回绕），值存可见变量「保存直到下次修改」；另一个键执行动作。边数上限必须 ≤ 每体顶点槽位数 `MAXV`（`slot=(i-1)*MAXV+k`，超出会写进邻体顶点槽）。新刚体质量派生式的乘法结合顺序与初始化逐字一致（位级铁律 13）。
+16. **积木类型名必须在编辑器注册表内**（2026-10-24 bikeman 实测）：kitten4 的类型名与 Scratch 不完全一致——取余积木是 `math_modulo`（输入名 `DIVIDEND`/`DIVISOR`），**不是** Scratch 的 `math_mod`。未注册类型在编辑器 `json_to_workspace` 建块时抛异常；而角色 ≥1000 块走异步加载路径，异常仅被 `console.log` 吞掉 → **不报错、工作区空白、connections 树不应用到块上**（复制全部积木到别的角色会看到一堆没连接、没输入值的块）。权威名单在 `data/editor_block_types.json`（876 个，从编辑器 bundle 抽取）；`validate_bcm4.py` 第 7c 节会报 `not registered`。新增/改名积木前先 `python tools/extract_registry.py` 确认真名。
 
 ## 二、通用正确范式
 - **克隆体各有状态（多克隆玩法）**：绝不用外部顺序计数器扫描克隆体——一旦有克隆体销毁，计数器与稳定索引 (`get_current_clone_index`) 错位 → 匹配不到、打不死。正确做法 = **每克隆体自匹配**：每只克隆体只读/写**自己**那一格（按 `cloneIdx()` 存进 per-clone list 槽）。命中条件全满足→自己 `dispose()` 自毁。用 `K.defRoleVar(name, actorId)` 给每只克隆体独立的变量。

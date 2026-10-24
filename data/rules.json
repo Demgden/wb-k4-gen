@@ -1,0 +1,466 @@
+{
+  "_meta": {
+    "purpose": "铁律的结构化索引：给 agent 查用，替代通读 docs/block_reference.md。",
+    "fields": {
+      "id": "铁律编号，与 docs/block_reference.md 第一节一致",
+      "title": "一句话标题",
+      "keywords": "症状检索词（ask.py symptom 按此匹配）",
+      "symptom": "在编辑器里看到的现象",
+      "cause": "根因",
+      "fix": "正确写法",
+      "enforced_by": "bcm4gen=库已自动处理，agent 无需操心；manual=必须自己写对；validator=有校验器可查",
+      "proof": "仅当 enforced_by=bcm4gen 时必填：一个正则列表，列表内每条都必须在 tools/bcm4gen.js 中匹配到。verify_dsl.py 逐条核对 —— 声明与实现不符即报错，防止本索引对 agent 说谎。"
+    },
+    "note": "enforced_by=bcm4gen 的条目已由 tools/bcm4gen.js 实现，agent 只要用对 DSL 助手即可，不必在代码里手写规避。"
+  },
+  "laws": [
+    {
+      "id": 1,
+      "title": "顶层不能有 compile_result",
+      "keywords": [
+        "compile_result",
+        "脚本区空白",
+        "空白"
+      ],
+      "symptom": "编辑器只读 compile_result，忽略 block_data_json，脚本区空白",
+      "cause": "信封里多写了顶层 compile_result 键",
+      "fix": "写盘前 delete project.compile_result",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/validate_bcm4.py <file.bcm4>",
+      "proof": [
+        "delete project\\.compile_result"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "emitChain 必须返回链首块",
+      "keywords": [
+        "emitChain",
+        "偏移",
+        "DO空",
+        "嵌套"
+      ],
+      "symptom": "嵌套积木向右下偏移，DO 输入空出",
+      "cause": "语句链连接时把链尾而不是链首接到父块",
+      "fix": "emitChain 返回 firstId",
+      "enforced_by": "bcm4gen",
+      "guard": "node tools/check_connections.js <file.bcm4>",
+      "proof": [
+        "return firstId"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "change_variable 用 valname+method，值输入名 n",
+      "keywords": [
+        "change_variable",
+        "chgV",
+        "变量增减"
+      ],
+      "symptom": "变量增减不生效或报错",
+      "cause": "误用 variables_set 的 VAR 字段",
+      "fix": "用 K.chgV(name, val)",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/validate_bcm4.py <file.bcm4>",
+      "proof": [
+        "valname: vars\\[name\\]",
+        "method: \"increase\"",
+        "inputs: \\{ n: val \\}"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "group_order 数组开头=最上层",
+      "keywords": [
+        "group_order",
+        "图层",
+        "z序"
+      ],
+      "symptom": "角色层级与预期相反",
+      "cause": "把「top」当成数组末尾",
+      "fix": "想沉底要 reverse 或插入末尾",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/validate_bcm4.py <file.bcm4>",
+      "proof": [
+        "group_order: Object\\.keys\\(groups\\)\\.reverse\\(\\)"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "每个命名输入都要有 shadows 条目",
+      "keywords": [
+        "shadows",
+        "影子",
+        "一改就坏"
+      ],
+      "symptom": "能加载，但一改积木就坏",
+      "cause": "值输入缺 shadow 模板 / 语句输入缺 \"\"",
+      "fix": "真实积木占据→phantom id 模板；字面量→is_shadow 块；语句输入→\"\"",
+      "enforced_by": "bcm4gen",
+      "guard": "node tools/check_connections.js <file.bcm4>",
+      "proof": [
+        "shadows\\[name\\] = \"\"",
+        "shadowTemplate\\(b\\.type, name, val\\)"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "角色默认盖住笔迹，需 set_layer_with_pen(below)",
+      "keywords": [
+        "画笔",
+        "笔迹",
+        "图层",
+        "pen"
+      ],
+      "symptom": "画笔轨迹被角色挡住",
+      "cause": "角色默认在画笔图层上方",
+      "fix": "K.script() 默认已插 set_layer_with_pen(below)；背景是真 scene 永不���移",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/bcm4_read.py <file.bcm4>",
+      "proof": [
+        "type: \"set_layer_with_pen\"",
+        "position: \"below\""
+      ]
+    },
+    {
+      "id": 7,
+      "title": "controls_if 是 if/else-if，不是独立多 if",
+      "keywords": [
+        "if",
+        "elseif",
+        "分支",
+        "阈值",
+        "倍率",
+        "永远走"
+      ],
+      "symptom": "阈值分支永远只命中最低层，高阈值分支永远到不了",
+      "cause": "把 controls_if 当成并列的多个 if 堆叠",
+      "fix": "用 K.ifChain([{cond,body},...])，高阈值分支排在前面，兜底用 {cond:null,body}",
+      "enforced_by": "manual",
+      "guard": "VM 测试覆盖分支；ask.py dsl ifChain"
+    },
+    {
+      "id": 8,
+      "title": "每个块（含叶子影子块）都要有 connections 条目",
+      "keywords": [
+        "connections",
+        "叶子",
+        "影子块",
+        "积木栏消失",
+        "加载失败"
+      ],
+      "symptom": "编辑器不报错、能打开、背景变量正常，但积木栏消失、脚本区空白、一动就出错",
+      "cause": "只给有子块的父块建了 connections 条目，math_number 等叶子影子块没有",
+      "fix": "每个块都要有条目，无子块给 {}",
+      "enforced_by": "bcm4gen",
+      "guard": "node tools/check_connections.js <file.bcm4>",
+      "proof": [
+        "if \\(!conns\\[vnode\\.id\\]\\) conns\\[vnode\\.id\\] = \\{\\}"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "影子块字段模式对齐真实作品",
+      "keywords": [
+        "is_shadow",
+        "deletable",
+        "is_output",
+        "inline",
+        "lists_get"
+      ],
+      "symptom": "影子块行为异常 / 列表读不到",
+      "cause": "is_shadow、deletable、is_output、location、parent_id 与编辑器原生模式不一致",
+      "fix": "deletable:true；reporter 影子 is_output:true；影子 shadows XML 的 id == 块自身 id；lists_get 只能当影子",
+      "enforced_by": "bcm4gen",
+      "guard": "node tools/check_connections.js <file.bcm4>",
+      "proof": [
+        "sdef\\.deletable = true",
+        "sdef\\.is_output"
+      ]
+    },
+    {
+      "id": 10,
+      "title": "函数调用 ARG 的字面量要转 default_value 影子块",
+      "keywords": [
+        "ARG",
+        "default_value",
+        "has_been_edited",
+        "自定义函数"
+      ],
+      "symptom": "带参数的函数调用打开后参数丢失",
+      "cause": "ARG 输入直接塞了 math_number 真实块",
+      "fix": "转成 fields:{TEXT:...} + field_extra_attr:{TEXT:{has_been_edited:true}} 的 default_value 影子",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/verify_procedures.py <file.bcm4>",
+      "proof": [
+        "\\^procedures_2_call",
+        "type: \"default_value\"",
+        "has_been_edited: true"
+      ]
+    },
+    {
+      "id": 11,
+      "title": "函数定义参数块 vs 函数体引用参数是两种类型",
+      "keywords": [
+        "procedures_2_stable_parameter",
+        "procedures_2_parameter",
+        "参数",
+        "打不开"
+      ],
+      "symptom": "无参数的文件能开、有参数的文件一律打不开（100% 吻合）；编辑器不报错，背景变量正常但积木栏消失",
+      "cause": "PARAMS 输入上挂成了 procedures_2_parameter，或 param_name 为空",
+      "fix": "定义槽用 procedures_2_stable_parameter（带 param_default_value），体内引用用 procedures_2_parameter",
+      "enforced_by": "bcm4gen",
+      "guard": "python tools/verify_procedures.py <file.bcm4>",
+      "proof": [
+        "procedures_2_stable_parameter",
+        "param_default_value"
+      ]
+    },
+    {
+      "id": 12,
+      "title": "布尔积木输出 Boolean，true≠1",
+      "keywords": [
+        "布尔",
+        "boolean",
+        "true",
+        "check_key",
+        "mouse_down",
+        "边沿",
+        "空格",
+        "暂停"
+      ],
+      "symptom": "鼠标抓取/空格暂停/单步/重置全部失灵，但不报错",
+      "cause": "用 K.eq(V(\"按下\"), N(1)) 把布尔与数字比较",
+      "fix": "IF 条件直用布尔变量（cond: V(\"按下\")），取反用 K.not()",
+      "enforced_by": "manual",
+      "guard": "VM 测试；ask.py dsl not"
+    },
+    {
+      "id": 13,
+      "title": "VM 参考模型要与积木浮点结合顺序位级一致",
+      "keywords": [
+        "VM",
+        "浮点",
+        "ULP",
+        "分叉",
+        "结合顺序",
+        "幂",
+        "x**2"
+      ],
+      "symptom": "VM 与编辑器在某一帧起可见分叉（如帧190 才爆）",
+      "cause": "参考模型的乘加结合顺序与积木不同，或用了 x**2（走 C pow 与 x*x 差 1 ULP）",
+      "fix": "结合顺序逐一对应；禁 x**2 写 x*x；用精确 == 逐帧扫描定位首处分歧帧",
+      "enforced_by": "manual",
+      "guard": "python tools/vm_test_<项目>.py <file.bcm4>"
+    },
+    {
+      "id": 14,
+      "title": "math_round = JS Math.round（floor(x+0.5)）",
+      "keywords": [
+        "round",
+        "四舍五入",
+        "取整",
+        "舍入"
+      ],
+      "symptom": "VM 在 .5 边界与编辑器假分叉",
+      "cause": "Python 用了内置 round()（银行家舍入）",
+      "fix": "写 float(math.floor(v + 0.5))；速度/角度/单位向量等小量级标量不要取整",
+      "enforced_by": "manual",
+      "guard": "VM 测试；ask.py dsl round"
+    },
+    {
+      "id": 15,
+      "title": "动态刚体：状态列表预扩展 + 个数用变量",
+      "keywords": [
+        "刚体",
+        "动态",
+        "新增",
+        "NB_MAX",
+        "边数",
+        "体数",
+        "越界"
+      ],
+      "symptom": "新刚体参数恒 0；读列表直接崩",
+      "cause": "状态列表没按容量上限预扩展，lists_replace 越界静默空操作；「当前个数」写成了常量",
+      "fix": "所有状态列表按 NB_MAX 预扩展（含边数/刚R）；当前个数用变量；参数化按键改边数",
+      "enforced_by": "manual",
+      "guard": "VM 测试的「读越界抛错」语义；ask.py dsl listAdd"
+    },
+    {
+      "id": 16,
+      "title": "积木类型必须在编辑器注册表内",
+      "keywords": [
+        "未注册",
+        "math_mod",
+        "积木不连接",
+        "零散",
+        "空白",
+        "scratch"
+      ],
+      "symptom": "能打开、积木零散不连接、没输入值、≥1000 块时不报错",
+      "cause": "用了 Scratch 风格类型名（math_mod），kitten4 注册名是 math_modulo",
+      "fix": "查 data/editor_block_types.json；新积木先跑 extract_registry.py 确认真名",
+      "enforced_by": "validator",
+      "guard": "python tools/validate_bcm4.py <file.bcm4>（7c 节报 not registered）"
+    }
+  ],
+  "paradigms": [
+    {
+      "title": "克隆体各有状态",
+      "keywords": [
+        "克隆",
+        "clone",
+        "自匹配",
+        "per-clone",
+        "销毁"
+      ],
+      "rule": "绝不用外部顺序计数器(1..cloneNum)扫描克隆体——有克隆体销毁时计数器与稳定索引 get_current_clone_index 错位。改为每克隆体自匹配：按 cloneIdx() 只读写自己那一格，命中条件全满足就自己 dispose()。",
+      "api": [
+        "defRoleVar",
+        "cloneIdx",
+        "dispose",
+        "listAdd",
+        "listSet"
+      ]
+    },
+    {
+      "title": "背景必须是真 scene",
+      "keywords": [
+        "背景",
+        "scene",
+        "图层倒置"
+      ],
+      "rule": "背景用 theatre.scenes[SCENE_ID]（永远最底层，在角色与画笔之下，无画笔功能），不要用「角色 + set_layer_with_pen(below)」——否则所有角色下移一层后图层顺序整体倒置。切换背景用 set_scene_by_index（index 1 基）。",
+      "api": [
+        "defScene",
+        "setScene",
+        "sceneScript"
+      ]
+    },
+    {
+      "title": "同帧重复用 warp",
+      "keywords": [
+        "warp",
+        "一步执行",
+        "同帧",
+        "初始化"
+      ],
+      "rule": "type:\"warp\" + DO 体内嵌循环，嵌套循环同帧跑完再等 1 帧。warp 只能包有界循环；内部不能有 repeat_forever（会卡死）。正确包法 = warp 包住 forever 的循环体，不是 forever 本身。",
+      "api": [
+        "warp",
+        "forever",
+        "repeatN"
+      ]
+    },
+    {
+      "title": "列表先扩容再写入",
+      "keywords": [
+        "列表",
+        "lists_replace",
+        "越界",
+        "空列表",
+        "恒空"
+      ],
+      "rule": "lists_replace 越界是静默空操作（不报错不写入）：对空列表赋值 → 列表恒空 → 读取全 0。必须先 listAdd 扩容到位再逐格写。",
+      "api": [
+        "listAdd",
+        "listSet",
+        "listGet",
+        "listLen"
+      ]
+    },
+    {
+      "title": "造型必须真实且可点击角色可见",
+      "keywords": [
+        "造型损坏",
+        "透明",
+        "png",
+        "visible",
+        "点不到",
+        "帽子"
+      ],
+      "rule": "1×1 透明 PNG 占位 = 「造型损坏」，用真实 SVG/PNG dataURI。要能被点击（start_on_click/sprite_on_tap）的角色必须 visible:true——不可见角色点不到，帽子永远不触发。",
+      "api": [
+        "defStyle",
+        "defActor",
+        "defScene"
+      ]
+    },
+    {
+      "title": "索引全部 1 基",
+      "keywords": [
+        "1基",
+        "索引",
+        "costume",
+        "造型序号"
+      ],
+      "rule": "costume(1)=第1个造型，setScene(1)=第1张背景，listGet index 1=第1项。bcm4gen 的 lit()/helpers 已按 1 基处理。",
+      "api": [
+        "costume",
+        "setScene",
+        "listGet"
+      ]
+    },
+    {
+      "title": "每帧循环只跑一次，不需 wait(0.03) 节流",
+      "keywords": [
+        "节流",
+        "wait",
+        "每帧"
+      ],
+      "rule": "kitten4 每帧循环只跑一次，无需 wait(0.03) 节流；多秒级等待（boss 闪光 0.1/0.2/0.3 等）保留。",
+      "api": [
+        "forever",
+        "wait"
+      ]
+    }
+  ],
+  "silent_failures": [
+    {
+      "symptom": "编辑器能打开但脚本区空白",
+      "cause": "块缺 connections 条目",
+      "guard": "node tools/check_connections.js"
+    },
+    {
+      "symptom": "能打开、积木零散不连接、没输入值（≥1000 块静默吞异常）",
+      "cause": "未注册积木类型（math_mod → math_modulo）",
+      "guard": "python tools/validate_bcm4.py（7c 节）"
+    },
+    {
+      "symptom": "有参数的文件打不开、无参数的文件能开",
+      "cause": "函数参数块类型写反（铁律 11）",
+      "guard": "python tools/verify_procedures.py"
+    },
+    {
+      "symptom": "一改积木就坏",
+      "cause": "命名输入缺 shadows",
+      "guard": "node tools/check_connections.js"
+    },
+    {
+      "symptom": "阈值分支永远走低层",
+      "cause": "controls_if 低阈值排在前面",
+      "guard": "VM 测试覆盖分支"
+    },
+    {
+      "symptom": "按键/鼠标交互无反应",
+      "cause": "布尔与数字比较（true≠1）",
+      "guard": "VM 测试"
+    },
+    {
+      "symptom": "新个体参数恒 0 / 读列表崩",
+      "cause": "lists_replace 越界静默丢失",
+      "guard": "VM 测试的「越界抛错」语义"
+    },
+    {
+      "symptom": "VM 与编辑器行为分叉",
+      "cause": "参考模型浮点结合顺序不一致",
+      "guard": "精确 == 逐帧扫描定位首帧分歧"
+    },
+    {
+      "symptom": "作品打不开（编辑器报未知错误）",
+      "cause": "信封格式不变量：codemao_value 为 null / 写了 current_entity 等三键 / scene.styles 为空",
+      "guard": "python tools/validate_bcm4.py（第 8 节）"
+    }
+  ]
+}

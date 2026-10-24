@@ -1,0 +1,1460 @@
+{
+  "A": {
+    "doc": "",
+    "editor_type": "get_audios",
+    "kind": "statement",
+    "order": 121,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "AW": {
+    "doc": "",
+    "editor_type": "get_whole_audios",
+    "kind": "statement",
+    "order": 122,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "B": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 157,
+    "params": [
+      {
+        "default": null,
+        "name": "type",
+        "rest": false
+      },
+      {
+        "default": "{}",
+        "name": "fields",
+        "rest": false
+      },
+      {
+        "default": "{}",
+        "name": "inputs",
+        "rest": false
+      },
+      {
+        "default": "null",
+        "name": "body",
+        "rest": false
+      },
+      {
+        "default": "\"\"",
+        "name": "mutation",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "LST": {
+    "doc": "旧版返回普通节点 → lists_get 成为 is_shadow:false 的真实子块，与编辑器原生 lists_get 影子模式不符。 _lit:\"list\" 走 addBlock 字面分支：自动生成 is_shadow 块 + 同 id 的 inline shadow XML + connections 条目。",
+    "editor_type": "lists_get",
+    "kind": "reporter",
+    "order": 127,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "LST：列表引用必须按真实作品的「影子块」模式发射（is_shadow:true + shadows XML 同 id + inline=\"true\"）。"
+  },
+  "N": {
+    "doc": "",
+    "editor_type": "math_number",
+    "kind": "statement",
+    "order": 116,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "V": {
+    "doc": "",
+    "editor_type": "variables_get",
+    "kind": "reporter",
+    "order": 123,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "abs": {
+    "doc": "",
+    "editor_type": "math_single",
+    "kind": "reporter",
+    "order": 145,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "add": {
+    "doc": "",
+    "editor_type": "math_arithmetic",
+    "kind": "reporter",
+    "order": 132,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "addAudio": {
+    "doc": "注册一段音频（dataURI 或 http(s) URL），返回声音 id，供 play()/stopAud() 引用。",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 84,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "url",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "音频",
+    "warnings": ""
+  },
+  "and": {
+    "doc": "",
+    "editor_type": "logic_operation",
+    "kind": "reporter",
+    "order": 142,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "appear": {
+    "doc": "",
+    "editor_type": "self_appear",
+    "kind": "statement",
+    "order": 171,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "build": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 451,
+    "params": [
+      {
+        "default": "\"未命名作品\"",
+        "name": "projectName",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "组装项目",
+    "warnings": ""
+  },
+  "chain": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 231,
+    "params": [
+      {
+        "default": null,
+        "name": "stmts",
+        "rest": true
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "chgCoord": {
+    "doc": "",
+    "editor_type": "self_change_coordinate",
+    "kind": "statement",
+    "order": 161,
+    "params": [
+      {
+        "default": null,
+        "name": "axis",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "dir",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "val",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "chgV": {
+    "doc": "",
+    "editor_type": "change_variable",
+    "kind": "statement",
+    "order": 130,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "val",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "clearDraw": {
+    "doc": "",
+    "editor_type": "clear_drawing",
+    "kind": "statement",
+    "order": 181,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "cloneIdx": {
+    "doc": "",
+    "editor_type": "get_current_clone_index",
+    "kind": "reporter",
+    "order": 169,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "cloneNum": {
+    "doc": "",
+    "editor_type": "get_clone_num",
+    "kind": "reporter",
+    "order": 170,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "cloneScript": {
+    "doc": "便利：给某 actor 写一个「当作为克隆体启动时」脚本（start_as_a_mirror 只有 DO 输入）",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 422,
+    "params": [
+      {
+        "default": null,
+        "name": "actorId",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "body",
+        "rest": false
+      },
+      {
+        "default": "50",
+        "name": "startY",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": ""
+  },
+  "costume": {
+    "doc": "",
+    "editor_type": "set_costume_by_index",
+    "kind": "statement",
+    "order": 173,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "defActor": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 387,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "styleIds",
+        "rest": false
+      },
+      {
+        "default": "{}",
+        "name": "opts",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": ""
+  },
+  "defList": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 101,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "变量",
+    "warnings": ""
+  },
+  "defParam": {
+    "doc": "定义槽 → procedures_2_stable_parameter（fields 带 param_default_value） 体引用 → procedures_2_parameter（fields 只有 param_name） 写反的症状：编辑器不报错、背景/变量正常，但积木栏消失、脚本区空白，整个文件打不开； 且「无参数的函数」所在的文件能开、「有参数的函数」所在的文件打不开（100% 吻合）。",
+    "editor_type": "procedures_2_stable_parameter",
+    "kind": "reporter",
+    "order": 244,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "★ 铁律 11（2026-10-23 血泪）：函数「定义」PARAMS 槽上的参数块，与函数体里「引用」参数，是两种不同类型。"
+  },
+  "defRoleVar": {
+    "doc": "角色变量（is_global:false + entity）：每个克隆体各持一份，等价于「克隆体专用」。",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 108,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "actorId",
+        "rest": false
+      },
+      {
+        "default": "0",
+        "name": "value",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "变量",
+    "warnings": ""
+  },
+  "defScene": {
+    "doc": "真正的编辑器背景（scene）：永远最底层，包含角色与画笔之下，无画笔功能。",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 407,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "styleIds",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": "背景造型切换逻辑写在这里，而非做成「角色」。铁律 6 修正。"
+  },
+  "defStyle": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 377,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "url",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "cdn",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": ""
+  },
+  "defVar": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 95,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": "0",
+        "name": "value",
+        "rest": false
+      },
+      {
+        "default": "false",
+        "name": "visible",
+        "rest": false
+      },
+      {
+        "default": "null",
+        "name": "pos",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "变量",
+    "warnings": ""
+  },
+  "dispose": {
+    "doc": "",
+    "editor_type": "dispose_clone",
+    "kind": "statement",
+    "order": 168,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "div": {
+    "doc": "",
+    "editor_type": "math_arithmetic",
+    "kind": "reporter",
+    "order": 135,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "emitScript": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 344,
+    "params": [
+      {
+        "default": null,
+        "name": "hat",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "bdj",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "startY",
+        "rest": false
+      },
+      {
+        "default": "true",
+        "name": "withPenLayer",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "Emitter",
+    "warnings": ""
+  },
+  "eq": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 136,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "fade": {
+    "doc": "",
+    "editor_type": "self_gradually_disappear",
+    "kind": "statement",
+    "order": 174,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "forever": {
+    "doc": "",
+    "editor_type": "repeat_forever",
+    "kind": "statement",
+    "order": 189,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "gatherVariables": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 433,
+    "params": [],
+    "reporter": false,
+    "section": "变量收集（可被外部模板生成器复用）",
+    "warnings": ""
+  },
+  "getTimer": {
+    "doc": "计时器（实证自 kitten.js）： show_hide_timer 控制编辑器默认那个丑陋的计时器 UI（默认空作品会自动注入 hide+start， 手写作品不会 → 不调用就一直显示默认计时器）。 reset_timer / set_timer_state(reset) 归零并 set_time(\"0.00\")。",
+    "editor_type": "get_timer",
+    "kind": "reporter",
+    "order": 203,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "get_timer 读取「虚拟秒」，但必须先用 set_timer_state(start) 启动计时，否则恒为 0。"
+  },
+  "getX": {
+    "doc": "",
+    "editor_type": "get_3",
+    "kind": "reporter",
+    "order": 162,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "getY": {
+    "doc": "",
+    "editor_type": "get_3",
+    "kind": "reporter",
+    "order": 163,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "gt": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 138,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "gte": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 140,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "hide": {
+    "doc": "",
+    "editor_type": "self_disappear",
+    "kind": "statement",
+    "order": 172,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "hideTimer": {
+    "doc": "",
+    "editor_type": "show_hide_timer",
+    "kind": "statement",
+    "order": 207,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "ifChain": {
+    "doc": "branches 形如 [{cond, body}, {cond, body}, {cond:null, body}]，高阈值分支务必排在前面。",
+    "editor_type": "controls_if",
+    "kind": "statement",
+    "order": 212,
+    "params": [
+      {
+        "default": null,
+        "name": "branches",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "controls_if：铁律 7 —— 它是 if/else-if（首个命中即返回），不是独立多 if。"
+  },
+  "imageStamp": {
+    "doc": "",
+    "editor_type": "image_stamp",
+    "kind": "statement",
+    "order": 193,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "listAdd": {
+    "doc": "",
+    "editor_type": "lists_append",
+    "kind": "statement",
+    "order": 184,
+    "params": [
+      {
+        "default": null,
+        "name": "l",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "v",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "listGet": {
+    "doc": "",
+    "editor_type": "lists_get_value",
+    "kind": "reporter",
+    "order": 186,
+    "params": [
+      {
+        "default": null,
+        "name": "l",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "i",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "listLen": {
+    "doc": "",
+    "editor_type": "lists_length",
+    "kind": "reporter",
+    "order": 187,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "listSet": {
+    "doc": "",
+    "editor_type": "lists_replace",
+    "kind": "statement",
+    "order": 185,
+    "params": [
+      {
+        "default": null,
+        "name": "l",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "i",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "v",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "loadDefs": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 28,
+    "params": [
+      {
+        "default": null,
+        "name": "jsonPath",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "默认输入 shadow 模板",
+    "warnings": ""
+  },
+  "lt": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 139,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "lte": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 141,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "mDown": {
+    "doc": "",
+    "editor_type": "mouse_down",
+    "kind": "reporter",
+    "order": 166,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "mirror": {
+    "doc": "",
+    "editor_type": "mirror",
+    "kind": "statement",
+    "order": 167,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "mod": {
+    "doc": "未注册类型会让编辑器建块抛异常（≥1000 块走异步加载、异常被吞）→ 工作区空白/积木不连接",
+    "editor_type": "math_modulo",
+    "kind": "reporter",
+    "order": 155,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "取模。注意：kitten4 的类型名是 math_modulo，不是 Scratch 的 math_mod——"
+  },
+  "mouseX": {
+    "doc": "",
+    "editor_type": "get_mouse_info",
+    "kind": "reporter",
+    "order": 164,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "mouseY": {
+    "doc": "",
+    "editor_type": "get_mouse_info",
+    "kind": "reporter",
+    "order": 165,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "move": {
+    "doc": "",
+    "editor_type": "self_go_forward",
+    "kind": "statement",
+    "order": 158,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "moveTo": {
+    "doc": "",
+    "editor_type": "self_move_to",
+    "kind": "statement",
+    "order": 159,
+    "params": [
+      {
+        "default": null,
+        "name": "x",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "y",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "mul": {
+    "doc": "",
+    "editor_type": "math_arithmetic",
+    "kind": "reporter",
+    "order": 134,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "ne": {
+    "doc": "",
+    "editor_type": "logic_compare",
+    "kind": "reporter",
+    "order": 137,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "nid": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 74,
+    "params": [],
+    "reporter": false,
+    "section": "ID 助手",
+    "warnings": ""
+  },
+  "not": {
+    "doc": "",
+    "editor_type": "logic_negate",
+    "kind": "reporter",
+    "order": 144,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "onClone": {
+    "doc": "",
+    "editor_type": "start_as_a_mirror",
+    "kind": "statement",
+    "order": 237,
+    "params": [
+      {
+        "default": null,
+        "name": "body",
+        "rest": true
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "onStart": {
+    "doc": "",
+    "editor_type": "start_on_click",
+    "kind": "statement",
+    "order": 236,
+    "params": [
+      {
+        "default": null,
+        "name": "body",
+        "rest": true
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "or": {
+    "doc": "",
+    "editor_type": "logic_operation",
+    "kind": "reporter",
+    "order": 143,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "paramRef": {
+    "doc": "",
+    "editor_type": "procedures_2_parameter",
+    "kind": "reporter",
+    "order": 245,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "penColor": {
+    "doc": "",
+    "editor_type": "self_set_pen_color",
+    "kind": "statement",
+    "order": 179,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "penDown": {
+    "doc": "",
+    "editor_type": "self_pen_down",
+    "kind": "statement",
+    "order": 177,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "penSize": {
+    "doc": "",
+    "editor_type": "self_set_pen_size",
+    "kind": "statement",
+    "order": 180,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "penUp": {
+    "doc": "",
+    "editor_type": "self_pen_up",
+    "kind": "statement",
+    "order": 178,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "play": {
+    "doc": "",
+    "editor_type": "play_audio_2",
+    "kind": "statement",
+    "order": 182,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "repeatN": {
+    "doc": "",
+    "editor_type": "repeat_n_times",
+    "kind": "statement",
+    "order": 190,
+    "params": [
+      {
+        "default": null,
+        "name": "t",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "body",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "reset": {
+    "doc": "清空全部单例状态（同进程多次生成时用）",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 536,
+    "params": [],
+    "reporter": false,
+    "section": "组装项目",
+    "warnings": ""
+  },
+  "resetTimer": {
+    "doc": "",
+    "editor_type": "set_timer_state",
+    "kind": "statement",
+    "order": 206,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "rnd": {
+    "doc": "",
+    "editor_type": "random",
+    "kind": "reporter",
+    "order": 152,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "round": {
+    "doc": "四舍五入取整（kitten4 的 math_round，OP=ROUND；无保留位数选项，结果恒为整数）",
+    "editor_type": "math_round",
+    "kind": "reporter",
+    "order": 148,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "scaleUp": {
+    "doc": "",
+    "editor_type": "self_change_scale_2",
+    "kind": "statement",
+    "order": 175,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "sceneScript": {
+    "doc": "便利：给背景写脚本（无画笔图层下移）",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 428,
+    "params": [
+      {
+        "default": null,
+        "name": "hat",
+        "rest": false
+      },
+      {
+        "default": "50",
+        "name": "startY",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": ""
+  },
+  "script": {
+    "doc": "便利：给某 actor 写一个「当角色被点击/绿旗」脚本",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 418,
+    "params": [
+      {
+        "default": null,
+        "name": "actorId",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "hat",
+        "rest": false
+      },
+      {
+        "default": "50",
+        "name": "startY",
+        "rest": false
+      },
+      {
+        "default": "true",
+        "name": "withPenLayer",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "角色 / 场景",
+    "warnings": ""
+  },
+  "setScene": {
+    "doc": "切换「背景造型」也用 set_costume_by_index（与角色造型同一积木，1 基）。index 1 基。",
+    "editor_type": "set_costume_by_index",
+    "kind": "statement",
+    "order": 192,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "setV": {
+    "doc": "",
+    "editor_type": "variables_set",
+    "kind": "statement",
+    "order": 129,
+    "params": [
+      {
+        "default": null,
+        "name": "name",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "val",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "shadowTemplate": {
+    "doc": "为「被真实 reporter 占据」的输入构造默认 shadow 模板（phantom id）。",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 47,
+    "params": [
+      {
+        "default": null,
+        "name": "btype",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "iname",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "real",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "默认输入 shadow 模板",
+    "warnings": ""
+  },
+  "shake": {
+    "doc": "",
+    "editor_type": "self_shake",
+    "kind": "statement",
+    "order": 176,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "showTimer": {
+    "doc": "",
+    "editor_type": "show_hide_timer",
+    "kind": "statement",
+    "order": 208,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "sqrt": {
+    "doc": "",
+    "editor_type": "math_single",
+    "kind": "reporter",
+    "order": 146,
+    "params": [],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "startTimer": {
+    "doc": "",
+    "editor_type": "set_timer_state",
+    "kind": "statement",
+    "order": 204,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "stepLen": {
+    "doc": "欧氏步长（逐帧位移真实长度），比曼哈顿更接近实际行程，避免斜向手势采样过早触发。",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 151,
+    "params": [
+      {
+        "default": null,
+        "name": "nx",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "ny",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "注意：参数传变量名；V() 每次新建节点，同一节点对象用于 A、B 两输入会丢一条边（mul 缺 A）。"
+  },
+  "stopAud": {
+    "doc": "",
+    "editor_type": "stop_audio_2",
+    "kind": "statement",
+    "order": 183,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "stopTimer": {
+    "doc": "",
+    "editor_type": "set_timer_state",
+    "kind": "statement",
+    "order": 205,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "sub": {
+    "doc": "",
+    "editor_type": "math_arithmetic",
+    "kind": "reporter",
+    "order": 133,
+    "params": [
+      {
+        "default": null,
+        "name": "a",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "b",
+        "rest": false
+      }
+    ],
+    "reporter": true,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "turn": {
+    "doc": "",
+    "editor_type": "self_rotate",
+    "kind": "statement",
+    "order": 160,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "uuid": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 78,
+    "params": [],
+    "reporter": false,
+    "section": "ID 助手",
+    "warnings": ""
+  },
+  "wait": {
+    "doc": "",
+    "editor_type": "wait",
+    "kind": "statement",
+    "order": 188,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": ""
+  },
+  "warp": {
+    "doc": "warp / 一步执行：内部嵌套循环同帧跑完，再等 1 帧。用于克隆体初始化原子化。",
+    "editor_type": "warp",
+    "kind": "statement",
+    "order": 196,
+    "params": [],
+    "reporter": false,
+    "section": "积木 DSL（纯函数，无状态）",
+    "warnings": "注意：warp 只能包「有界」循环；内部 repeat_forever 会在「一帧」内无法展开 → VM/编辑器会卡死。"
+  },
+  "write": {
+    "doc": "",
+    "editor_type": null,
+    "kind": "statement",
+    "order": 523,
+    "params": [
+      {
+        "default": null,
+        "name": "outPath",
+        "rest": false
+      },
+      {
+        "default": null,
+        "name": "projectName",
+        "rest": false
+      }
+    ],
+    "reporter": false,
+    "section": "组装项目",
+    "warnings": ""
+  }
+}

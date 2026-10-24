@@ -22,7 +22,8 @@ cd projects/我的作品 && bash check.sh
 
 **content.js 怎么写**：照抄 `examples/poorphy/content.js` 的对应模式
 （变量/列表/过程/循环/帽子），或 `tools/template_work.js` 的 DSL 用法。
-不确定积木结构时先 `python ../../tools/query_block.py --type <type>` 再写。
+不确定积木结构时先 `python ../../tools/query_block.py --type <type>` 再写；
+不确定用哪个 DSL 函数时先 `python ../../tools/ask.py dsl <名字>`。
 
 **多角色/多背景**：`gen_mount.js` 目前只挂载 build(K) 生成的**第一个** actor。
 多角色需在 content.js 里 `K.defActor` 多个，并自行扩展 gen.js 的挂载段
@@ -53,10 +54,13 @@ bash check.sh                                   # 或：node gen.js && bash ../.
 
 ```bash
 bash tools/check_all.sh out/我的作品.bcm4 vm_test.py   # 有 VM 测试就带上
-# 人工过一遍 docs/block_reference.md 的 15 条铁律（尤其 3/4/6/11）
+python tools/ask.py guard                              # 交付前自检清单（含各防线命令）
 git status          # 确认 out/ 未被提交；projects/ 里没有私有作品
 git add -A && git commit -m "..."
 ```
+
+> 铁律不用人工通读：`python tools/ask.py law` 会按「库已自动 / 需自己写对」分组列出，
+> 只需人工过一遍「需自己写对」那几条。
 
 ---
 
