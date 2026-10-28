@@ -215,6 +215,28 @@ CN = {
     # 自定义过程(如有)
     "procedures_definition": ("定义过程", {}),
     "procedures_call": ("调用过程[mutation]", {}),
+
+    # ---- self_* 变体(不带目标下拉，直接作用于自己)，槽名是小写的 ----
+    "self_set_position": ("设置[{coordinary}] = {}{value}", {}),
+    "self_change_coordinate": ("[{coordinary}]增减[{increase}]{}{value}", {}),
+    "self_move_to": ("移到 x[{}{x}] y[{}{y}]", {}),
+    "self_move_specify": ("移向[{target}]", {}),
+    "self_point_towards": ("面向方向[{}{degrees}]", {}),
+    "self_rotate": ("旋转[{}{degrees}]度", {}),
+    "set_scale": ("设置大小为[{}{scale}]", {}),
+    "set_width_height_scale": ("设置[{type}]缩放[{}{value}]", {}),
+    "add_width_height_scale_2": ("[type]增加[{}{increase}]", {}),
+    # ---- 画笔/图层 ----
+    "self_set_pen_size": ("设置画笔粗细[{}{size}]", {}),
+    "self_set_pen_color": ("设置画笔颜色[{color}]", {}),
+    "self_set_pen_color_property": ("设置画笔[{scope}]为[{}{val}]", {}),
+    "set_pen_path": ("设置画笔[{point}]", {}),
+    "set_fill_style": ("设置填充色[{color}]", {}),
+    "set_theatre_layer": ("设置层级[{layer}]", {}),
+    # ---- 广播/变量显示 ----
+    "self_broadcast": ("发送广播[{}{message}]", {}),
+    "self_broadcast_and_wait": ("发送广播[{}{message}]并等待", {}),
+    "show_hide_variable": ("[FUNC]变量[{VAR}]", {}),
 }
 
 OP_CN = {
@@ -252,6 +274,35 @@ class Reader:
         self.actor_name["__self"] = "自己"
         self.scene_name = {sid: s.get("name", sid)
                            for sid, s in (th.get("scenes") or {}).items()}
+        # shadow 索引: shadow块id -> {字段名: 值}
+        # 用途: 有些块(field 被序列化成 "?")的真实值只存在父块的 shadows XML 里，
+        #       例如 lists_get 的 VAR、被折叠成 shadow 的 math_number 的 NUM。
+        self.shadow_index = {}
+        ents = list((th.get("scenes") or {}).values()) + list((th.get("actors") or {}).values())
+        for ent in ents:
+            for _bid, bl in ((ent.get("block_data_json") or {}).get("blocks") or {}).items():
+                for _slot, raw in (bl.get("shadows") or {}).items():
+                    if not isinstance(raw, str) or "<shadow" not in raw:
+                        continue
+                    m_id = re.search(r'id="([^"]+)"', raw)
+                    if not m_id:
+                        continue
+                    flds = dict(re.findall(r'<field[^>]*name="([^"]+)"[^>]*>([^<]*)</field>', raw))
+                    if flds:
+                        self.shadow_index.setdefault(m_id.group(1), {}).update(flds)
+
+    def fields_of(self, b):
+        """取字段表，值为 "?" 的占位项用 shadow XML 里的真实值补上。"""
+        f = b.get("fields") or {}
+        if not any(v == "?" for v in f.values()):
+            return f
+        fix = {k: v for k, v in (self.shadow_index.get(b.get("id")) or {}).items()
+               if f.get(k) == "?"}
+        if not fix:
+            return f
+        merged = dict(f)
+        merged.update(fix)
+        return merged
 
     def name(self, kind, uid):
         if uid is None or uid == "?" or uid == "":
@@ -266,7 +317,7 @@ class Reader:
         if b is None:
             return "<?>"
         t = b.get("type", "?")
-        f = b.get("fields") or {}
+        f = self.fields_of(b)
         ins = self.inputs_of(bid, blocks, conns)
 
         def E(name):
@@ -325,6 +376,10 @@ class Reader:
             else:
                 var = self.name("var", f.get("VAR"))
             ty = f.get("TYPE", "first")
+            # 铁律: TYPE 只是下拉默认值残留，真实语义看 INDEX 槽有没有挂块。
+            # 实测本类块 1224 个 TYPE=first 全部带 INDEX 输入，50 个 TYPE=last 全不带。
+            if "INDEX" in ins:
+                return f"列表[{var}]第[{self.expr(ins['INDEX'], blocks, conns, depth + 1)}]项"
             if ty in ("first",):
                 return f"列表[{var}]首项"
             if ty in ("last",):
@@ -389,7 +444,7 @@ class Reader:
 
     def render_stmt(self, bid, b, blocks, conns, indent, out, maxlines):
         t = b.get("type")
-        f = b.get("fields") or {}
+        f = self.fields_of(b)
         ins = self.inputs_of(bid, blocks, conns)
         bodies = self.bodies_of(bid, blocks, conns)  # input_name -> chain head
         pad = "  " * indent
@@ -408,12 +463,19 @@ class Reader:
         if t == "lists_delete":
             var = self.expr(ins["VAR"], blocks, conns) if "VAR" in ins else self.name("var", f.get("VAR"))
             ty = f.get("TYPE", "first")
-            if ty == "first":
+            if ty == "all":
+                out.append(pad + f"清空列表[{var}]")
+            elif ty == "first":
                 out.append(pad + f"列表[{var}]删除首项")
             elif ty == "last":
                 out.append(pad + f"列表[{var}]删除末项")
             else:
                 out.append(pad + f"列表[{var}]删除第[{self._idx_expr(ins, E, b)}]项")
+            return
+
+        if t == "lists_replace" and f.get("TYPE") == "last":
+            var = self.expr(ins["VAR"], blocks, conns) if "VAR" in ins else self.name("var", f.get("VAR"))
+            out.append(pad + f"列表[{var}]末项 = {E('VALUE')}")
             return
 
         # 模板渲染
@@ -539,11 +601,11 @@ class Reader:
             s = self.shadow_literal(b, k)
             if s is not None:
                 return s
-        return "?"
+        return "<无索引槽>"
 
     def render_procedure(self, bid, b, blocks, conns, indent, out, maxlines):
         t = b.get("type")
-        f = b.get("fields") or {}
+        f = self.fields_of(b)
         name = f.get("NAME", "?")
         bodies = self.bodies_of(bid, blocks, conns)
         ins = self.inputs_of(bid, blocks, conns)
@@ -579,7 +641,7 @@ class Reader:
         return [p for _i, p in params]
 
     def _call_text(self, b, blocks, conns):
-        f = b.get("fields") or {}
+        f = self.fields_of(b)
         ins = self.inputs_of(b["id"], blocks, conns)
         name = f.get("NAME", "?")
         args = []
@@ -600,7 +662,7 @@ class Reader:
     # ------------------------------------------------------------ 概览
     def hat_label(self, b):
         t = b.get("type")
-        f = b.get("fields") or {}
+        f = self.fields_of(b)
         if t == "start_on_click":
             return "当角色被点击"
         if t == "start_as_a_mirror":
@@ -610,10 +672,18 @@ class Reader:
         if t == "on_swipe":
             return "当滑动屏幕"
         if t == "start_on_msg":
-            return f"当收到广播[{f.get('msg', '?')}]"
+            return f"当收到广播[{f.get('msg') or self.shadow_msg(b) or '?'}]"
+        if t == "self_listen":
+            return f"当收到广播[{self.shadow_msg(b) or '?'}]"
         if t == "start_on_tag":
             return f"当处于标签[{f.get('tag', '?')}]"
         return t
+
+    def shadow_msg(self, b):
+        """广播消息藏在 shadows['message'] 的 XML 里，不在 fields 里。"""
+        sh = (b.get("shadows") or {}).get("message") or ""
+        m = re.search(r'name="MESSAGE"[^>]*>([^<]*)<', sh)
+        return m.group(1) if m else ""
 
 
 def dump_entity(r, ent, kind, filters, maxlines):
@@ -630,7 +700,8 @@ def dump_entity(r, ent, kind, filters, maxlines):
     tops = [b for b in blocks.values() if not b.get("parent_id")]
     tops.sort(key=lambda x: (x.get("location") or [0, 9e9])[1])
     HATS = {"start_on_click", "start_as_a_mirror", "on_key", "on_keydown",
-            "on_swipe", "start_on_msg", "start_on_tag", "start_on_cloud_msg"}
+            "on_swipe", "start_on_msg", "start_on_tag", "start_on_cloud_msg",
+            "self_listen"}
     for hat in tops:
         t0 = hat.get("type")
         if t0 in ("procedures_2_defnoreturn", "procedures_2_return_value"):
@@ -648,7 +719,7 @@ def dump_entity(r, ent, kind, filters, maxlines):
             continue
         print(f"\n── 脚本 @ loc{hat.get('location')}: {r.hat_label(hat)}")
         out = []
-        if hat.get("type") == "start_as_a_mirror":
+        if hat.get("type") in ("start_as_a_mirror", "self_listen"):
             bodies = r.bodies_of(hat["id"], blocks, conns)
             if bodies.get("DO"):
                 r.render_chain(bodies["DO"], blocks, conns, 1, out, maxlines)
