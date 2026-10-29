@@ -68,6 +68,8 @@ import shutil
 import sys
 import time
 
+from bcm4_json import dumps as js_dumps
+
 FIELD_RE = re.compile(r'(<field[^>]*name="%s"[^>]*>)([^<]*)(</field>)')
 
 
@@ -82,9 +84,9 @@ def save(path, data, backup=True):
         bak = f"{path}.bak.{time.strftime('%Y%m%d_%H%M%S')}"
         shutil.copy2(path, bak)
         print(f"已备份 → {bak}")
-    # 原文件是单行压缩 JSON，保持同样的序列化方式
+    # 原文件是单行压缩 JSON，且浮点格式按 JS 规则写回（否则会出现 3.47e-06 这类噪声）
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+        f.write(js_dumps(data))
 
 
 # ---------------------------------------------------------------- 实体遍历

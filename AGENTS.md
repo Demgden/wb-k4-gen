@@ -109,6 +109,8 @@ tools4k4/
 │                   ask.py(★ 查询入口) query_block.py(积木速查) extract_dsl_api.py
 │                   extract_registry.py validate_bcm4.py check_connections.js
 │                   verify_procedures.py verify_dsl.py bcm4_read.py(反编译)
+│                   bcm4_patch.py(批量改/删积木) bcm4_build.py(构造并插入新积木)
+│                   bcm4_json.py(按 JS 规则序列化 .bcm4)
 │                   kitten4_root.js(工具链定位·项目挪目录仍有效)
 │                   check_all.sh(作品门禁) check_repo.sh(仓库门禁)
 ├── data/           block_defs.json(影子模板) block_struct.json(结构摘要)
