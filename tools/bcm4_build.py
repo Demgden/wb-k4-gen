@@ -75,6 +75,9 @@ DEFS_PATH = os.path.join(ROOT, "data", "block_defs.json")
 ALPHABET = string.ascii_letters + string.digits
 XMLNS = 'xmlns="http://www.w3.org/1999/xhtml"'
 
+# 包装块的占位符：取值写 "$" 的槽表示「被包住的原块接到这里」
+HOLDER = "$"
+
 # 这些字段名存的是变量 uuid，允许用户直接写变量名
 VAR_FIELDS = ("VAR", "valname")
 
@@ -292,6 +295,12 @@ class Builder:
         specs_body = spec.get("body") or {}
         inputs_meta = {i["name"]: i["kind"] for i in (st.get("inputs") or [])}
 
+        # 0) 占位槽「$」：值写成 HOLDER 表示「这里留给被包住的原块」。
+        #    先摘出来，槽位处理时跳过它，最后统一补一份默认 shadow（phantom）。
+        holder_slots = [k for k, v in specs_inputs.items() if v == HOLDER]
+        if holder_slots:
+            specs_inputs = {k: v for k, v in specs_inputs.items() if v != HOLDER}
+
         # 1) 字段（field_* 类输入 + 用户显式给的 fields）
         for k, v in (spec.get("fields") or {}).items():
             rec["fields"][k] = self._resolve_field(k, v)
@@ -357,6 +366,11 @@ class Builder:
                 rec["shadows"][name] = self.shadow_tpl(t, name, val.get("fields"))
             else:
                 self._build_literal(bid, name, val, t)
+
+        # 3.8) 占位槽「$」补默认 shadow（等调用方把被包住的块接进来）
+        for name in holder_slots:
+            kind = inputs_meta.get(name, "value")
+            rec["shadows"][name] = "" if kind == "statement" else self.shadow_tpl(t, name)
 
         # 4) controls_if 的 mutation 与 dummy 槽（编辑器靠它显示「加否则」按钮）
         if t == "controls_if":
@@ -592,6 +606,147 @@ def cmd_list(proj):
             print(f"   {label:28s} 顶层语句 {n}")
 
 
+def func_blocks(blocks, conns, func_kw):
+    """某个脚本（函数/广播/帽子）里所有块的 id 集合，含值槽里的子块。"""
+    ids = set()
+    for label, head, _root in script_heads(blocks, conns):
+        if not _name_hit(func_kw, label):
+            continue
+        stack = [head] if head else []
+        while stack:
+            cur = stack.pop()
+            if cur in ids or cur not in blocks:
+                continue
+            ids.add(cur)
+            for tgt in (conns.get(cur) or {}):
+                stack.append(tgt)
+    return ids
+
+
+# 这些类型不是「数值」，套数学运算会类型错乱（列表引用、文本、布尔…）
+NON_NUMERIC = {"lists_get", "get_audios", "get_whole_audios", "text",
+               "logic_boolean", "logic_compare", "logic_operation", "logic_negate",
+               "text_join", "text_split"}
+
+
+def find_wrap_targets(blocks, conns, btype, slots, scope=None):
+    """列出 (父块id, 槽名, 槽里现有的块id)，只算挂了真实子块的值槽。
+
+    会自动跳过子块是非数值类型（列表引用/文本/布尔）的槽——用 --input * 也不会误伤。
+    """
+    out = []
+    skipped = 0
+    for bid, b in blocks.items():
+        if b.get("type") != btype:
+            continue
+        if scope is not None and bid not in scope:
+            continue
+        for tgt, m in (conns.get(bid) or {}).items():
+            if m.get("type") != "input" or m.get("input_type") != "value":
+                continue
+            nm = m.get("input_name")
+            if slots and nm not in slots:
+                continue
+            if blocks.get(tgt, {}).get("type") in NON_NUMERIC:
+                skipped += 1
+                continue
+            out.append((bid, nm, tgt))
+    return out, skipped
+
+
+def wrap_slot(blocks, conns, parent_bid, slot_name, wrapper_bid, holder_slot, inner_bid):
+    """把 wrapper 塞进 parent 的 slot_name 槽，原来槽里的块接到 wrapper 的 holder_slot。"""
+    for t, m in list((conns.get(parent_bid) or {}).items()):
+        if (m.get("type") == "input" and m.get("input_type") == "value"
+                and m.get("input_name") == slot_name):
+            del conns[parent_bid][t]
+    conns[parent_bid][wrapper_bid] = {"type": "input", "input_type": "value",
+                                      "input_name": slot_name}
+    blocks[wrapper_bid]["parent_id"] = parent_bid
+    if inner_bid:
+        conns[wrapper_bid][inner_bid] = {"type": "input", "input_type": "value",
+                                         "input_name": holder_slot}
+        blocks[inner_bid]["parent_id"] = wrapper_bid
+
+
+def cmd_wrap(args):
+    """把某个类型的所有实例的指定值槽，各包一层包装块（如四舍五入）。
+
+    只改连接，不增删语句，所以 show 里的 [N] 编号在 wrap 前后不变，可以反复叠。
+    """
+    if not args.block:
+        raise SystemExit("wrap 需要 --block（包装块规格，其中一个槽写 \"$\" 表示被包住的原块）")
+    if not args.type:
+        raise SystemExit("wrap 需要 --type（要包哪种积木的槽，如 self_move_to）")
+    spec = load_json(args.block)
+    if isinstance(spec, list):
+        if len(spec) != 1:
+            raise SystemExit("wrap 的 --block 只能是一块")
+        spec = spec[0]
+    holders = [k for k, v in (spec.get("inputs") or {}).items() if v == HOLDER]
+    if len(holders) != 1:
+        raise SystemExit(f'包装块规格里必须且只能有一个槽写成 "{HOLDER}"，现在是 {holders}')
+    holder = holders[0]
+
+    proj = load_json(args.path)
+    pool = ([find_entity(proj, args.actor)] if args.actor
+            else list(entities(proj)))
+
+    slots = None
+    if args.input and args.input.strip() != "*":
+        slots = {s.strip() for s in args.input.split(",") if s.strip()}
+    nest = max(1, args.nest or 1)
+    grand = 0
+    grand_targets = 0
+    for name, ent in pool:
+        blocks, conns = bdj_of(ent)
+        scope = func_blocks(blocks, conns, args.func) if args.func else None
+        targets, skipped = find_wrap_targets(blocks, conns, args.type, slots, scope)
+        if skipped:
+            print(f"[{name}] 跳过 {skipped} 个非数值槽（列表引用/文本/布尔）")
+        if not targets:
+            continue
+        if args.limit:
+            targets = targets[: args.limit]
+        builder = Builder(proj, blocks, conns)
+        before = len(blocks)
+        for parent_bid, slot_name, child in targets:
+            inner = child
+            for _ in range(nest):
+                w = builder.build(spec, None)
+                wrap_slot(blocks, conns, parent_bid, slot_name, w, holder, inner)
+                inner = w
+        for w in builder.warnings:
+            print("   !", w)
+        print(f"[{name}] {args.type} 包 {len(targets)} 个槽 × {nest} 层，"
+              f"新增 {len(blocks) - before} 个块")
+        grand += len(blocks) - before
+        grand_targets += len(targets)
+
+    if not grand_targets:
+        raise SystemExit(f"{args.type} 没有挂在真实块上的值槽"
+                         + (f"（限定槽 {sorted(slots)}）" if slots else ""))
+    print(f"合计：{grand_targets} 个槽，新增 {grand} 个块")
+
+    errs = verify(proj)
+    if errs:
+        print("!! 校验失败，拒绝写入：")
+        for e in errs[:10]:
+            print("   ", e)
+        sys.exit(1)
+    print("校验通过（连接/parent_id/shadow 形状全部有效）")
+    if args.write:
+        bak = f"{args.path}.bak.{time.strftime('%Y%m%d_%H%M%S')}"
+        with open(args.path, encoding="utf-8") as src, open(bak, "w", encoding="utf-8") as dst:
+            dst.write(src.read())
+        print("已备份 →", bak)
+        with open(args.path, "w", encoding="utf-8") as f:
+            f.write(js_dumps(proj))
+        print("已写入", args.path)
+    else:
+        print("(dry-run，未写盘。确认无误后加 --write)")
+
+
 def cmd_show(args):
     name, ent = find_entity(args.path_proj, args.actor) if args.actor else (None, None)
     pool = [(name, ent)] if ent else list(entities(args.path_proj))
@@ -605,7 +760,7 @@ def cmd_show(args):
         if not shown:
             continue
         print(f"\n[{ename}] {args.func or '全部'}")
-        for g, (label, path, idx, bid) in shown[: args.limit]:
+        for g, (label, path, idx, bid) in shown[: (args.limit or 20)]:
             b = blocks[bid]
             f = b.get("fields") or {}
             desc = b.get("type")
@@ -621,14 +776,17 @@ def cmd_show(args):
 def main():
     ap = argparse.ArgumentParser(description="从积木定义构造新块并插入 .bcm4")
     ap.add_argument("path")
-    ap.add_argument("action", choices=["list", "show", "insert"])
+    ap.add_argument("action", choices=["list", "show", "insert", "wrap"])
     ap.add_argument("--actor", help="角色/场景名（子串）")
-    ap.add_argument("--func", help="函数/脚本名（子串）")
+    ap.add_argument("--func", help="函数/脚本名（子串）；wrap 时限定只包这个函数里的槽")
     ap.add_argument("--index", type=int, default=-1, help="插入到该函数的第几条顶层语句(0起)；-1=函数体开头")
     ap.add_argument("--at", type=int, help="按 show 输出的全局编号 [N] 精确定位（可定位到 if/循环体内部）")
     ap.add_argument("--pos", choices=["before", "after"], default="before")
     ap.add_argument("--block", help="积木规格 JSON 文件")
-    ap.add_argument("--limit", type=int, default=20)
+    ap.add_argument("--type", dest="type", help="wrap：要包哪种积木（如 self_move_to）")
+    ap.add_argument("--input", help="wrap：只包这些值槽，逗号分隔；* 或不写=全部值槽")
+    ap.add_argument("--nest", type=int, default=1, help="wrap：套几层（默认 1）")
+    ap.add_argument("--limit", type=int, help="show 默认显示 20 条；wrap 默认不限")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
@@ -639,6 +797,9 @@ def main():
         return
     if args.action == "show":
         cmd_show(args)
+        return
+    if args.action == "wrap":
+        cmd_wrap(args)
         return
 
     # ---- insert
