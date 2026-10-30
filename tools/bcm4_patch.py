@@ -177,7 +177,22 @@ def _name_hit(pattern, actual):
     return pattern in actual
 
 
-def matches(b, where, owner, conns):
+def _subtree(blocks, conns, bid):
+    """bid 的所有后代(含自身)，不下钻 next 下一句"""
+    seen, stack = set(), [bid]
+    while stack:
+        c = stack.pop()
+        if c in seen or c not in blocks:
+            continue
+        seen.add(c)
+        for tgt, meta in (conns.get(c) or {}).items():
+            if meta.get("type") == "next":
+                continue
+            stack.append(tgt)
+    return seen
+
+
+def matches(b, where, owner, conns, blocks=None):
     t = b.get("type") or ""
     if "type" in where:
         w = where["type"]
@@ -199,6 +214,36 @@ def matches(b, where, owner, conns):
     for slot in (where.get("has") or []):
         if slot not in (conns.get(b.get("id")) or {}):
             return False
+    # ---- 结构条件（需要 blocks 才能判断）----
+    if blocks is not None:
+        kids = conns.get(b.get("id")) or {}
+        if "value_type" in where:
+            # 任一「值槽」子块的类型命中（如 variables_set 的值是 text_join）
+            ok = False
+            for tgt, m in kids.items():
+                if m.get("type") == "input" and m.get("input_type") == "value":
+                    if _name_hit(where["value_type"], (blocks.get(tgt) or {}).get("type") or ""):
+                        ok = True
+                        break
+            if not ok:
+                return False
+        if where.get("empty"):
+            # 语句体为空（空转的循环）
+            if any(m.get("type") == "input" and m.get("input_type") == "statement"
+                   for m in kids.values()):
+                return False
+        if "has_call" in where:
+            # 子树里调用了某个自定义过程
+            want = where["has_call"]
+            hit = False
+            for c in _subtree(blocks, conns, b.get("id")):
+                cb = blocks.get(c) or {}
+                if (cb.get("type") or "").startswith("procedures_2_call") and \
+                        _name_hit(want, (cb.get("fields") or {}).get("NAME") or ""):
+                    hit = True
+                    break
+            if not hit:
+                return False
     return True
 
 
@@ -309,7 +354,7 @@ def run_rules(proj, rules, write, verbose):
             blocks, conns = bdj_of(ent)
             own = owners(blocks, conns)
             for bid, b in list(blocks.items()):
-                if matches(b, where, own.get(bid), conns):
+                if matches(b, where, own.get(bid), conns, blocks):
                     loc = b.get("location") or [0, 0]
                     hits.append((name, ent, bid, loc[1]))
         hits.sort(key=lambda x: x[3])          # 按画布 y 排序，保证可复现
@@ -359,6 +404,7 @@ def main():
     ap.add_argument("--do", nargs="*", default=[], help="临时动作 形如 field.NUM=1 / type=xxx / delete=1")
     ap.add_argument("--set-var", nargs="*", default=[], help="改全局变量初值 名=值")
     ap.add_argument("--write", action="store_true", help="真正落盘（默认只预览）")
+    ap.add_argument("--no-backup", action="store_true", help="落盘时不生成 .bak 副本")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -430,7 +476,7 @@ def main():
     if not args.write:
         print("(dry-run，未写盘。确认无误后加 --write)")
     else:
-        save(args.path, proj)
+        save(args.path, proj, backup=not args.no_backup)
 
 
 if __name__ == "__main__":
