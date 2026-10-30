@@ -76,24 +76,19 @@ tools4k4/
 | **跑通示例** | `bash examples/poorphy/check_all.sh`（生成 + 校验 + VM 240 帧闭环测试） |
 | **学习 DSL** | 读 `tools/template_work.js`（从零搭最小作品）→ `node tools/template_work.js` → `out/我的作品(模板).bcm4` |
 
-## 项目挪出仓库怎么办
-
-项目用 `kitten4_root.js` 定位工具链（scaffold 自动复制进项目），不要写死相对路径
-
 ```js
 const { root: TOOLS_ROOT, requireTool, dataPath } = require("./kitten4_root.js");
 const K = requireTool("bcm4gen.js");
 ```
 
-# 读懂任意已有作品
+### 读懂任意已有作品
 python tools/bcm4_read.py reference_works/florr合卡.bcm4
 
-# 校验任意作品（发布门禁）
+### 校验任意作品（发布门禁）
 bash tools/check_all.sh out/我的作品.bcm4 [vm_test.py]
 
-# 仓库自检（知识库一致 + 示例全流程）
+### 仓库自检（知识库一致 + 示例全流程）
 bash tools/check_repo.sh [--full]
 
-# 空白基础作品（快速验证编辑器链路）
+### 空白基础作品（快速验证编辑器链路）
 node tools/gen_basic.js
-```
