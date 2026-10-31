@@ -350,6 +350,15 @@ class Reader:
             return f'"{ins.get("VALUE", "?")}"'
         if t == "text_type":
             return f"text({E('content')})"
+        if t == "text_join":
+            # 可变参数槽: ADD0..ADDn（items 数看 mutation），按序拼
+            keys = sorted([k for k in ins if k.startswith("ADD")],
+                          key=lambda s: int(re.sub(r"\D", "", s) or 0))
+            if not keys:
+                return '""'
+            return "合并(" + ", ".join(E(k) for k in keys) + ")"
+        if t == "text_split":
+            return f"分割({E('TEXT_TO_SPLIT')} 按 {E('SPLIT_TEXT')})"
         if t in ("logic_compare", "logic_operation", "math_arithmetic"):
             op = OP_CN.get(f.get("OP"), f.get("OP"))
             if t == "logic_operation":
@@ -463,14 +472,17 @@ class Reader:
         if t == "lists_delete":
             var = self.expr(ins["VAR"], blocks, conns) if "VAR" in ins else self.name("var", f.get("VAR"))
             ty = f.get("TYPE", "first")
+            # 铁律(和 lists_get_value 同一条)：TYPE 只是下拉残留，
+            # 只要 INDEX 槽挂了真块，运行时就是 splice(INDEX,1)，不管 TYPE 写的是 first 还是 index。
+            # 见 kitten.js: lists_delete → "last"===TYPE? pop() : splice(INDEX-1,1)
             if ty == "all":
                 out.append(pad + f"清空列表[{var}]")
-            elif ty == "first":
-                out.append(pad + f"列表[{var}]删除首项")
+            elif "INDEX" in ins:
+                out.append(pad + f"列表[{var}]删除第[{self._idx_expr(ins, E, b)}]项")
             elif ty == "last":
                 out.append(pad + f"列表[{var}]删除末项")
             else:
-                out.append(pad + f"列表[{var}]删除第[{self._idx_expr(ins, E, b)}]项")
+                out.append(pad + f"列表[{var}]删除首项(无索引)")
             return
 
         if t == "lists_replace" and f.get("TYPE") == "last":

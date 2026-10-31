@@ -1,0 +1,13 @@
+{
+ "control_wait": "{e.opcode=\"wait\",e.inputs.DURATION.name=\"time\",Be(e,\"DURATION\")}",
+ "control_repeat": "{e.opcode=\"repeat_n_times\",e.inputs.TIMES.name=\"times\",Be(e,\"TIMES\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.name=\"DO\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.tag_name=\"statement\")}",
+ "control_forever": "{e.opcode=\"repeat_forever\",e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.name=\"DO\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.tag_name=\"statement\")}",
+ "control_if": "{e.opcode=\"controls_if_no_else\";var t=je(e);e.inputs.IF0={name:\"IF0\",block:t.id,shadow:t.id},e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.name=\"DO0\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.tag_name=\"statement\"),delete e.inputs.CONDITION}",
+ "control_if_else": "{e.opcode=\"controls_if\",e.mutation={name:\"else\",name_value:\"1\"};var t=je(e);e.inputs.IF0={name:\"IF0\",block:t.id,shadow:t.id},e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.name=\"DO0\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK2.name=\"ELSE\"),e.inputs.SUBSTACK1&&(e.inputs.SUBSTACK1.tag_name=\"statement\"),e.inputs.SUBSTACK2&&(e.inputs.SUBSTACK2.tag_name=\"statement\"),delete e.inputs.CONDITION}",
+ "control_wait_until": "{e.opcode=\"wait_until\";var t=je(e);e.inputs.IF0={name:\"condition\",block:t.id,shadow:t.id}}",
+ "control_repeat_until": "{e.opcode=\"repeat_forever_until\";var t=je(e);e.inputs.IF0={name:\"condition\",block:t.id,shadow:t.id},e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.name=\"DO\"),e.inputs.SUBSTACK&&(e.inputs.SUBSTACK.tag_name=\"statement\"),delete e.inputs.CONDITION}",
+ "control_stop": "{e.opcode=\"stop\",e.fields.STOP_OPTION={name:\"scope\",value:ke.SCRIPT[e.fields.STOP_OPTION.value]||\"\"}}",
+ "control_start_as_clone": "{e.opcode=\"start_as_a_mirror\",Ue(e,\"DO\")}",
+ "control_create_clone_of": "{e.opcode=\"mirror\";var t=n[e.inputs.CLONE_OPTION.shadow].fields.CLONE_OPTION.value;ze(e,\"CLONE_OPTION\");var r=\"_myself_\"===t?i&&i.id:o[t];e.fields.sprite={name:\"sprite\",value:r},e.inputs={}}",
+ "control_delete_this_clone": "{e.opcode=\"dispose\"}"
+}

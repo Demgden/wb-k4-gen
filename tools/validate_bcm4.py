@@ -105,7 +105,8 @@ for a in actors:
     for b in (bd.get("blocks") or {}).values():
         if b["type"] in ("mirror", "get_clone_num"):
             sid = (b.get("fields") or {}).get("sprite")
-            if sid not in actor_ids:
+            # "__self" 是合法值（真实作品里 mirror 绝大多数都写 __self）
+            if sid not in actor_ids and sid not in ("__self", "__pointer", "__mouse", "__random"):
                 errs.append(f"{a.get('name')}: {b['type']} references unknown sprite {sid}")
 
 # 7. dropdown OP/PROPERTY field values must exist in the editor's option domain
@@ -131,6 +132,11 @@ for a in actors:
             if fk in ("OP", "PROPERTY") and fv not in dom:
                 errs.append(f"{a.get('name')}: {b['type']}.{fk}={fv!r} not in domain {sorted(dom)}")
 
+HAT_TYPES = ("procedures_2_defnoreturn", "procedures_2_return_value", "self_listen",
+             "on_keydown", "on_key", "sprite_on_tap", "on_swipe", "on_shake", "on_tilt",
+             "on_mobile_click_btn", "on_running_group_activated", "when",
+             "start_on_msg", "start_on_tag", "start_on_cloud_msg", "backdrop_on_change")
+
 # 7b. reachability: procedure definitions are top-level scripts in the editor too.
 #     （旧版只认 hat 根 → 过程式作品整片误报 unreachable；defnoreturn/return_value 也是根）
 for ai, a in enumerate(actors):
@@ -140,7 +146,7 @@ for ai, a in enumerate(actors):
     conns = bd.get("connections", {})
     roots = [b["id"] for b in blocks.values()
              if b["type"].startswith("start_") or b["type"] == "event_whenflagclicked"
-             or b["type"] in ("procedures_2_defnoreturn", "procedures_2_return_value")]
+             or b["type"] in HAT_TYPES]
     edges = []
     for bid, m in conns.items():
         if isinstance(m, dict):

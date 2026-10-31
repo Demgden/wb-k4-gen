@@ -81,6 +81,58 @@ HOLDER = "$"
 # 这些字段名存的是变量 uuid，允许用户直接写变量名
 VAR_FIELDS = ("VAR", "valname")
 
+# 只能以「影子」形态出现在值槽里的积木（编辑器里是下拉/输入框本身，不是可拖的块）。
+# 一旦被当成普通块写进 blocks，Blockly 找不到独立定义，就会渲染成空白框：
+# 没有文字、没有输入、连接也挂不上 —— 打开角色只看到一坨空块。
+SHADOW_TYPES = {
+    "broadcast_input", "get_audios", "get_whole_audios", "lists_get",
+    "get_current_costume",
+    "logic_empty", "math_number", "text", "shadow_text", "default_value",
+}
+# 用 <empty> 标签而不是 <shadow> 的类型
+EMPTY_TYPES = {"logic_empty"}
+
+# 影子块在 XML 里的字段写法（直接写死，比从 defs 模板反推可靠）
+SHADOW_FIELDS = {
+    "broadcast_input": [("MESSAGE", None)],
+    "get_audios": [("sound_id", None)],
+    "get_whole_audios": [("sound_id", None)],
+    "lists_get": [("VAR", None)],
+    "get_current_costume": [("style_id", None)],
+    "logic_empty": [("BOOL", "")],
+    "logic_boolean": [("BOOL", "TRUE")],
+    "text": [("TEXT", "")],
+    "shadow_text": [("TEXT", "")],
+    "math_number": [("NUM", "0")],
+    "default_value": [("has_been_edited", "false"), ("TEXT", "0")],
+}
+
+
+def shadow_xml(btype, fields, sid, inline=None):
+    """按类型生成合法的 shadow / empty XML，id 由调用方决定（必须与块 id 一致）"""
+    fields = fields or {}
+    if btype in EMPTY_TYPES:
+        inner = "".join('<field name="%s">%s</field>' % (k, esc(fields.get(k, dflt)))
+                        for k, dflt in SHADOW_FIELDS.get(btype, []))
+        return ('<empty %s type="%s" id="%s" visible="visible" editable="false">%s</empty>'
+                % (XMLNS, btype, sid, inner))
+    if btype == "math_number":
+        num = fields.get("NUM", fields.get("TEXT", "0"))
+        inner = ('<field constraints="-Infinity,Infinity,0," allow_text="true" '
+                 'name="NUM">%s</field>' % esc(num))
+    else:
+        pairs = SHADOW_FIELDS.get(btype)
+        if pairs is None:
+            pairs = [(k, "") for k in fields]
+        inner = "".join(
+            '<field name="%s">%s</field>' % (k, esc(fields.get(k, dflt)))
+            for k, dflt in pairs)
+    if inline is None:
+        inline = btype in ("lists_get", "get_audios", "get_whole_audios", "get_current_costume")
+    tag = ' inline="true"' if inline else ""
+    return ('<shadow %s type="%s" id="%s"%s visible="visible">%s</shadow>'
+            % (XMLNS, btype, sid, tag, inner))
+
 
 # ---------------------------------------------------------------- 数据加载
 def load_json(p):
@@ -239,18 +291,15 @@ class Builder:
         if d is None:
             return self._borrow_shadow(btype, iname)
         sid = self.new_id()
+        rf = dict(real_fields or {})
         if d["kind"] == "empty":
-            return f'<empty {XMLNS} type="{d["type"]}" id="{sid}" visible="visible" editable="false"></empty>'
+            return shadow_xml(d["type"], rf, sid)
+        if d["type"] in SHADOW_TYPES:
+            tpl = dict(re.findall(
+                r'<field name="([^"]+)"[^>]*>([^<]*)</field>', d.get("fields") or ""))
+            tpl.update(rf)
+            return shadow_xml(d["type"], tpl, sid)
         fields = d.get("fields") or ""
-        rf = real_fields or {}
-        if d["type"] == "lists_get" and rf.get("VAR"):
-            fields = f'<field name="VAR">{esc(rf["VAR"])}</field>'
-        elif d["type"] == "get_audios" and rf.get("sound_id"):
-            fields = f'<field name="sound_id">{esc(rf["sound_id"])}</field>'
-        elif d["type"] == "math_number":
-            m = re.search(r'name="NUM"[^>]*>([\s\S]*?)</field>', fields)
-            num = m.group(1) if m else "0"
-            fields = f'<field constraints="-Infinity,Infinity,0," allow_text="true" name="NUM">{esc(num)}</field>'
         inline = ' inline="true"' if d["type"] in ("lists_get", "get_audios", "get_whole_audios") else ""
         return f'<shadow {XMLNS} type="{d["type"]}" id="{sid}"{inline} visible="visible">{fields}</shadow>'
 
@@ -275,15 +324,18 @@ class Builder:
                 f"未注册的积木类型 {t!r}：编辑器打开时会抛异常（积木栏消失/工作区空白）。"
                 f"用 query_block.py --list 查正确名字。")
         st = STRUCT.get(t, {})
-        bid = self.new_id()
+        # 允许外部指定块 id（自定义积木的 def_id 必须等于定义块自身的 id，
+        # 否则 procedures_2_call* 里的 def_id 指向不存在的块，调用绑不上定义）
+        bid = spec.get("id") or self.new_id()
+        is_sh = bool(spec.get("shadow")) or t in SHADOW_TYPES
         rec = {
-            "type": t, "id": bid, "comment": None, "is_shadow": False,
+            "type": t, "id": bid, "comment": None, "is_shadow": is_sh,
             "collapsed": False, "disabled": False, "deletable": True,
             "movable": True, "editable": True, "visible": "visible",
             "shadows": {}, "fields": {}, "field_constraints": {},
             "field_extra_attr": {}, "comment_extra": None,
             "mutation": spec.get("mutation") or "",
-            "is_output": bool(st.get("output")),
+            "is_output": True if is_sh else bool(st.get("output")),
             "parent_id": parent,
             "location": loc or [0, 0],
         }
@@ -324,13 +376,7 @@ class Builder:
                 if name in specs_inputs and specs_inputs[name] is not None:
                     val = specs_inputs[name]
                     if isinstance(val, dict):
-                        # 真实子块 + phantom shadow（规则 3）
-                        child = self.build(val, bid)
-                        self.conns[bid][child] = {"type": "input",
-                                                  "input_type": "value",
-                                                  "input_name": name}
-                        self.blocks[child]["parent_id"] = bid
-                        rec["shadows"][name] = self.shadow_tpl(t, name, val.get("fields"))
+                        self._attach_value(bid, rec, t, name, val)
                     else:
                         # 标量 → 自建影子块
                         self._build_literal(bid, name, val, t)
@@ -358,12 +404,7 @@ class Builder:
             if name in inputs_meta or val is None:
                 continue
             if isinstance(val, dict):
-                child = self.build(val, bid)
-                self.conns[bid][child] = {"type": "input",
-                                          "input_type": "value",
-                                          "input_name": name}
-                self.blocks[child]["parent_id"] = bid
-                rec["shadows"][name] = self.shadow_tpl(t, name, val.get("fields"))
+                self._attach_value(bid, rec, t, name, val)
             else:
                 self._build_literal(bid, name, val, t)
 
@@ -389,8 +430,29 @@ class Builder:
             else:
                 rec["shadows"]["EXTRA_ADD_ELSE"] = ""
 
-        # 5) 变量下拉的默认 shadow（与项目内真实块保持一致：variables_set 只带 VALUE 的 shadow）
+        # 5) 规格里点名的「空槽」（编辑器里存在但结构表没列出的 phantom）填 ""
+        for name in spec.get("drop_shadows") or []:
+            rec["shadows"].pop(name, None)
+        for name in spec.get("empty_shadows") or []:
+            rec["shadows"].setdefault(name, "")
         return bid
+
+    def _attach_value(self, pid, prec, ptype, name, val):
+        """把一个值规格接到 pid 的 name 槽。
+
+        * 影子类型（广播下拉、音频下拉、列表变量、空条件…）：块本身 is_shadow=True，
+          父块的 shadows[name] 用**同一个 id**，编辑器才会把它当槽里的下拉渲染。
+        * 普通块：真块 + 另起 id 的 phantom shadow（规则 3）。
+        """
+        child = self.build(val, pid)
+        self.conns[pid][child] = {"type": "input", "input_type": "value",
+                                  "input_name": name}
+        self.blocks[child]["parent_id"] = pid
+        if val.get("type") in SHADOW_TYPES:
+            prec["shadows"][name] = shadow_xml(val["type"], val.get("fields"), child)
+        else:
+            prec["shadows"][name] = self.shadow_tpl(ptype, name, val.get("fields"))
+        return child
 
     def _resolve_field(self, name, val):
         if name in VAR_FIELDS and isinstance(val, str) and val in self.var_by_name:
@@ -428,19 +490,14 @@ class Builder:
             "movable": True, "editable": True, "visible": "visible",
             "shadows": {}, "fields": flds, "field_constraints": {},
             "field_extra_attr": {}, "mutation": "",
-            "is_output": None if vtype == "math_number" else True,
+            "is_output": vtype in ("math_number", "text", "logic_boolean"),
             "parent_id": parent, "location": [0, 0],
         }
         if vtype == "math_number":
             srec["field_constraints"] = {"NUM": {"min": None, "max": None, "precision": 0, "mod": None}}
         self.blocks[sid] = srec
         self.conns[sid] = {}
-        if vtype == "math_number":
-            inner = f'<field constraints="-Infinity,Infinity,0," allow_text="true" name="NUM">{esc(val)}</field>'
-        else:
-            inner = "".join(f'<field name="{k}">{esc(v)}</field>' for k, v in flds.items())
-        self.blocks[parent]["shadows"][name] = (
-            f'<shadow {XMLNS} type="{vtype}" id="{sid}" visible="visible">{inner}</shadow>')
+        self.blocks[parent]["shadows"][name] = shadow_xml(vtype, flds, sid)
         self.conns[parent][sid] = {"type": "input", "input_type": "value", "input_name": name}
         return sid
 
